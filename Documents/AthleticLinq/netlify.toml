@@ -1,0 +1,46 @@
+[build]
+  publish = "out"
+  command = "npm run build"
+  functions = "netlify/functions"
+
+[build.environment]
+  NODE_VERSION = "20"
+
+
+# Serve custom 404.html for any athlete profile that doesn't have a pre-built page.
+# force = false means: only fires when no file exists at the requested path.
+# Static athletes (/athletes/1 … /athletes/8) have index.html files → served directly.
+# Registered athletes (/athletes/user_*) have no file → 404.html loads and fetches from Supabase.
+[[redirects]]
+  from = "/athletes/:id"
+  to   = "/404.html"
+  status = 404
+  force  = false
+
+# Security & performance headers
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-XSS-Protection = "1; mode=block"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Strict-Transport-Security = "max-age=63072000; includeSubDomains; preload"
+    Permissions-Policy = "camera=(), microphone=(), geolocation=(), payment=(), usb=(), bluetooth=()"
+    Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https:; connect-src 'self' https://tzvftfkajclueyyyuhpm.supabase.co https://www.strava.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self';"
+
+# Cache static assets aggressively
+[[headers]]
+  for = "/_next/static/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/*.jpg"
+  [headers.values]
+    Cache-Control = "public, max-age=86400"
+
+[[headers]]
+  for = "/*.jpeg"
+  [headers.values]
+    Cache-Control = "public, max-age=86400"
