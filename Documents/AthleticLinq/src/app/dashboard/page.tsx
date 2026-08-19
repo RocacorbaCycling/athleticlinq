@@ -391,6 +391,12 @@ export default function Dashboard() {
   };
   const [scoutFavourites, setScoutFavourites] = useState<FavouriteAthlete[]>([]);
 
+  type MessageReply = {
+    text: string;
+    from_athlete_id: string;
+    athlete_name: string;
+    created_at: string;
+  };
   type InboxMessage = {
     id: string;
     from_scout_id: string;
@@ -399,8 +405,22 @@ export default function Dashboard() {
     message: string;
     created_at: string;
     read: boolean;
+    replies: MessageReply[];
   };
   const [inboxMessages, setInboxMessages] = useState<InboxMessage[]>([]);
+  const [replyingTo, setReplyingTo] = useState<string | null>(null);
+  const [replyText, setReplyText] = useState("");
+  const [replySending, setReplySending] = useState(false);
+
+  type SentMessage = {
+    id: string;
+    to_athlete_id: string;
+    scout_name: string;
+    message: string;
+    created_at: string;
+    replies: MessageReply[];
+  };
+  const [scoutSentMessages, setScoutSentMessages] = useState<SentMessage[]>([]);
 
   useEffect(() => {
     if (!isLoading && !user) router.push("/login");
@@ -474,11 +494,24 @@ export default function Dashboard() {
     if (!user || isScout(user) || !supabase) return;
     supabase
       .from("messages")
-      .select("id, from_scout_id, scout_name, scout_organization, message, created_at, read")
+      .select("id, from_scout_id, scout_name, scout_organization, message, created_at, read, replies")
       .eq("to_athlete_id", user.id)
       .order("created_at", { ascending: false })
       .then(({ data }) => {
-        if (data) setInboxMessages(data as InboxMessage[]);
+        if (data) setInboxMessages(data.map((m) => ({ ...m, replies: m.replies ?? [] })) as InboxMessage[]);
+      });
+  }, [user]);
+
+  // Fetch messages sent by scout (to see replies)
+  useEffect(() => {
+    if (!user || !isScout(user) || !supabase) return;
+    supabase
+      .from("messages")
+      .select("id, to_athlete_id, scout_name, message, created_at, replies")
+      .eq("from_scout_id", user.id)
+      .order("created_at", { ascending: false })
+      .then(({ data }) => {
+        if (data) setScoutSentMessages(data.map((m) => ({ ...m, replies: m.replies ?? [] })) as SentMessage[]);
       });
   }, [user]);
 
@@ -835,6 +868,48 @@ export default function Dashboard() {
               >
                 Browse Athletes →
               </Link>
+
+              {/* Scout sent messages + replies */}
+              {scoutSentMessages.length > 0 && (
+                <div className="bg-white rounded-2xl border border-stone/20 overflow-hidden">
+                  <div className="flex items-center gap-2 px-5 py-4 border-b border-stone/10">
+                    <svg className="w-4 h-4 text-coral" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+                    </svg>
+                    <h3 className="font-display text-base text-navy-deep">Messages</h3>
+                    {scoutSentMessages.some((m) => m.replies.length > 0) && (
+                      <span className="text-xs font-normal text-white bg-coral px-2 py-0.5 rounded-full ml-auto">
+                        {scoutSentMessages.reduce((n, m) => n + m.replies.length, 0)} repl{scoutSentMessages.reduce((n, m) => n + m.replies.length, 0) === 1 ? "y" : "ies"}
+                      </span>
+                    )}
+                  </div>
+                  <div className="divide-y divide-stone/10">
+                    {scoutSentMessages.map((msg) => (
+                      <div key={msg.id} className="p-4">
+                        <div className="flex items-center justify-between mb-1">
+                          <p className="text-xs font-semibold text-navy-deep">To: {msg.to_athlete_id}</p>
+                          <span className="text-[10px] text-earth/40">
+                            {new Date(msg.created_at).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}
+                          </span>
+                        </div>
+                        <p className="text-xs text-earth/70 leading-relaxed mb-2">{msg.message}</p>
+                        {msg.replies.length > 0 ? (
+                          <div className="space-y-1.5 border-l-2 border-coral/30 pl-2.5">
+                            {msg.replies.map((r, i) => (
+                              <div key={i}>
+                                <p className="text-[10px] font-semibold text-coral">{r.athlete_name} <span className="font-normal text-earth/40">{new Date(r.created_at).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}</span></p>
+                                <p className="text-xs text-earth/80">{r.text}</p>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <p className="text-[10px] text-earth/40 italic">No reply yet</p>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
@@ -2089,17 +2164,91 @@ export default function Dashboard() {
                             </div>
                           </div>
                           <p className="text-earth/80 text-xs leading-relaxed">{msg.message}</p>
-                          {!msg.read && (
-                            <button
-                              onClick={async () => {
-                                if (!supabase) return;
-                                await supabase.from("messages").update({ read: true }).eq("id", msg.id);
-                                setInboxMessages((prev) => prev.map((m) => m.id === msg.id ? { ...m, read: true } : m));
-                              }}
-                              className="mt-2 text-[10px] text-coral hover:underline"
-                            >
-                              Mark as read
-                            </button>
+
+                          {/* Previous replies */}
+                          {msg.replies.length > 0 && (
+                            <div className="mt-2 space-y-1.5 border-l-2 border-olive/30 pl-2.5">
+                              {msg.replies.map((r, i) => (
+                                <div key={i}>
+                                  <p className="text-[10px] font-semibold text-olive">{r.athlete_name} <span className="font-normal text-earth/40">{new Date(r.created_at).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}</span></p>
+                                  <p className="text-xs text-earth/80">{r.text}</p>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+
+                          {/* Reply / mark read */}
+                          <div className="flex gap-3 mt-2">
+                            {replyingTo !== msg.id && (
+                              <button
+                                onClick={async () => {
+                                  if (!msg.read && supabase) {
+                                    await supabase.from("messages").update({ read: true }).eq("id", msg.id);
+                                    setInboxMessages((prev) => prev.map((m) => m.id === msg.id ? { ...m, read: true } : m));
+                                  }
+                                  setReplyingTo(msg.id);
+                                  setReplyText("");
+                                }}
+                                className="text-[10px] font-semibold text-coral hover:underline"
+                              >
+                                Reply
+                              </button>
+                            )}
+                            {!msg.read && replyingTo !== msg.id && (
+                              <button
+                                onClick={async () => {
+                                  if (!supabase) return;
+                                  await supabase.from("messages").update({ read: true }).eq("id", msg.id);
+                                  setInboxMessages((prev) => prev.map((m) => m.id === msg.id ? { ...m, read: true } : m));
+                                }}
+                                className="text-[10px] text-earth/40 hover:underline"
+                              >
+                                Mark as read
+                              </button>
+                            )}
+                          </div>
+
+                          {/* Inline reply form */}
+                          {replyingTo === msg.id && (
+                            <div className="mt-2">
+                              <textarea
+                                value={replyText}
+                                onChange={(e) => setReplyText(e.target.value)}
+                                placeholder="Write your reply…"
+                                rows={3}
+                                className="w-full border border-stone/40 rounded-xl px-3 py-2 text-xs text-warm-black placeholder-earth/50 focus:outline-none focus:border-coral/60 resize-none"
+                              />
+                              <div className="flex gap-2 mt-1.5 justify-end">
+                                <button
+                                  onClick={() => { setReplyingTo(null); setReplyText(""); }}
+                                  className="text-[10px] text-earth/50 hover:text-earth px-3 py-1.5 border border-stone/30 rounded-full"
+                                >
+                                  Cancel
+                                </button>
+                                <button
+                                  disabled={!replyText.trim() || replySending}
+                                  onClick={async () => {
+                                    if (!supabase || !user || !replyText.trim()) return;
+                                    setReplySending(true);
+                                    const newReply: MessageReply = {
+                                      text: replyText.trim(),
+                                      from_athlete_id: user.id,
+                                      athlete_name: `${(user as { firstName?: string }).firstName ?? ""} ${(user as { lastName?: string }).lastName ?? ""}`.trim(),
+                                      created_at: new Date().toISOString(),
+                                    };
+                                    const updated = [...msg.replies, newReply];
+                                    await supabase.from("messages").update({ replies: updated, read: true }).eq("id", msg.id);
+                                    setInboxMessages((prev) => prev.map((m) => m.id === msg.id ? { ...m, replies: updated, read: true } : m));
+                                    setReplyingTo(null);
+                                    setReplyText("");
+                                    setReplySending(false);
+                                  }}
+                                  className="text-[10px] font-semibold bg-coral hover:bg-coral/90 disabled:opacity-50 text-white px-4 py-1.5 rounded-full transition-colors"
+                                >
+                                  {replySending ? "Sending…" : "Send Reply"}
+                                </button>
+                              </div>
+                            </div>
                           )}
                         </div>
                       ))}
