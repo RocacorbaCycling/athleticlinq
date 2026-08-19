@@ -32,6 +32,11 @@
       "name": "My Dashboard",
       "url": "/dashboard",
       "description": "View your profile and stats"
+    },
+    {
+      "name": "Admin",
+      "url": "/admin",
+      "description": "Platform admin panel"
     }
   ]
 }

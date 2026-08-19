@@ -42,7 +42,10 @@ function CheckIcon() {
 
 // ── Main component ────────────────────────────────────────────────────────────
 export default function AdminPage() {
-  const [authed,      setAuthed]      = useState(false);
+  const [authed,      setAuthed]      = useState(() => {
+    if (typeof window === "undefined") return false;
+    return sessionStorage.getItem("al_admin_authed") === "1";
+  });
   const [pwInput,     setPwInput]     = useState("");
   const [pwError,     setPwError]     = useState(false);
   const [athletes,    setAthletes]    = useState<AthleteProfile[]>([]);
@@ -220,7 +223,7 @@ export default function AdminPage() {
             <h1 className="text-2xl font-bold text-white mb-1">Admin Access</h1>
             <p className="text-white/40 text-sm">AthleticLinq Control Panel</p>
           </div>
-          <form onSubmit={(e) => { e.preventDefault(); if (pwInput === ADMIN_PASSWORD) { setAuthed(true); setPwError(false); } else { setPwError(true); setPwInput(""); } }} className="space-y-4">
+          <form onSubmit={(e) => { e.preventDefault(); if (pwInput === ADMIN_PASSWORD) { sessionStorage.setItem("al_admin_authed", "1"); setAuthed(true); setPwError(false); } else { setPwError(true); setPwInput(""); } }} className="space-y-4">
             <div>
               <input type="password" placeholder="Admin password" value={pwInput}
                 onChange={(e) => { setPwInput(e.target.value); setPwError(false); }}
@@ -282,7 +285,7 @@ export default function AdminPage() {
             </svg>
             {loading ? "Loading…" : "Refresh"}
           </button>
-          <button onClick={() => setAuthed(false)} className="text-white/40 hover:text-white text-xs transition-colors">Sign out</button>
+          <button onClick={() => { sessionStorage.removeItem("al_admin_authed"); setAuthed(false); }} className="text-white/40 hover:text-white text-xs transition-colors">Sign out</button>
         </div>
       </div>
 
