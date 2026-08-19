@@ -1,0 +1,5 @@
+# AthleticLinq — Netlify redirects
+# Netlify serves .html files as pretty URLs automatically
+# We only need to handle the 404 fallback
+
+/*    /404.html    404
