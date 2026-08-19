@@ -26,6 +26,15 @@ export const metadata: Metadata = {
   title: "AthleticLinq - Discover the Next Generation of Cycling",
   description:
     "The global platform connecting talented young cyclists with professional teams, scouts, and agents. Showcase your power numbers, compound score, and racing highlights.",
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "AthleticLinq",
+  },
+  other: {
+    "mobile-web-app-capable": "yes",
+  },
 };
 
 export default function RootLayout({
@@ -38,7 +47,15 @@ export default function RootLayout({
       lang="en"
       className={`${inter.variable} ${playfair.variable} ${cormorant.variable} h-full antialiased`}
     >
+      <head>
+        <meta name="theme-color" content="#1a2744" />
+        <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+      </head>
       <body className="min-h-full flex flex-col bg-warm-white text-warm-black">
+        {/* Service Worker registration */}
+        <Script id="sw-register" strategy="afterInteractive">
+          {`if ('serviceWorker' in navigator) { navigator.serviceWorker.register('/sw.js'); }`}
+        </Script>
         {/* Google Analytics 4 */}
         <Script
           src="https://www.googletagmanager.com/gtag/js?id=G-HV7HTDEBWW"

@@ -1,0 +1,37 @@
+{
+  "name": "AthleticLinq",
+  "short_name": "AthleticLinq",
+  "description": "Connecting talented young cyclists with professional teams and scouts.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#1a2744",
+  "theme_color": "#1a2744",
+  "orientation": "portrait-primary",
+  "categories": ["sports", "lifestyle"],
+  "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Discover Athletes",
+      "url": "/discover",
+      "description": "Browse the athlete directory"
+    },
+    {
+      "name": "My Dashboard",
+      "url": "/dashboard",
+      "description": "View your profile and stats"
+    }
+  ]
+}
