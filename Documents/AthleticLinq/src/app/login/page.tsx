@@ -80,6 +80,8 @@ export default function Login() {
                 className="w-full px-4 py-2.5 rounded-xl border border-stone/40 text-sm text-warm-black focus:outline-none focus:ring-2 focus:ring-coral/30 bg-cream-warm/30"
                 placeholder="Your password"
                 minLength={8}
+                autoComplete="current-password"
+                name="password"
               />
             </div>
 

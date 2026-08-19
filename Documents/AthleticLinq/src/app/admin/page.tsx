@@ -224,6 +224,8 @@ export default function AdminPage() {
             <div>
               <input type="password" placeholder="Admin password" value={pwInput}
                 onChange={(e) => { setPwInput(e.target.value); setPwError(false); }}
+                autoComplete="current-password"
+                name="password"
                 className={`w-full px-4 py-3 rounded-xl bg-white/10 text-white placeholder:text-white/30 border outline-none focus:ring-2 focus:ring-coral/40 ${pwError ? "border-coral/70" : "border-white/20"}`} />
               {pwError && <p className="text-coral text-xs mt-1.5">Incorrect password. Try again.</p>}
             </div>
