@@ -57,6 +57,9 @@ export interface AthleteProfile {
   stravaYTDHours?: number;
   stravaTotalSufferScore?: number;
   instagramUrl?: string;
+  procyclingstatsUrl?: string;
+  pcsResults?: Array<{ year: string; race: string; position: number; category: string; raceUrl: string }>;
+  pcsLastSync?: string;
   // Lab results
   labResultsUrl?: string;
   labResultsFileName?: string;

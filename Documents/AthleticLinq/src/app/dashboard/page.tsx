@@ -299,6 +299,10 @@ function EditModal({
                 <label className="block text-xs font-semibold uppercase tracking-wider text-earth mb-1.5">Instagram URL</label>
                 <input type="text" className={inp} value={form.instagramUrl || ""} onChange={(e) => set("instagramUrl", e.target.value)} placeholder="https://www.instagram.com/your-handle" />
               </div>
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-wider text-earth mb-1.5">ProCyclingStats URL</label>
+                <input type="text" className={inp} value={(form as { procyclingstatsUrl?: string }).procyclingstatsUrl || ""} onChange={(e) => set("procyclingstatsUrl" as keyof typeof form, e.target.value as never)} placeholder="https://www.procyclingstats.com/rider/your-name" />
+              </div>
             </>
           )}
         </div>
@@ -350,6 +354,31 @@ export default function Dashboard() {
   const [uploadingLabResults, setUploadingLabResults] = useState(false);
   const [labResultsError, setLabResultsError] = useState<string | null>(null);
   const [analyzingLab, setAnalyzingLab] = useState(false);
+  const [syncingPcs, setSyncingPcs] = useState(false);
+  const [pcsError, setPcsError] = useState<string | null>(null);
+
+  async function handlePcsSync() {
+    if (!user || !isAthlete(user) || !user.procyclingstatsUrl) return;
+    setSyncingPcs(true);
+    setPcsError(null);
+    try {
+      const res = await fetch("/.netlify/functions/scrape-pcs-results", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ pcsUrl: user.procyclingstatsUrl }),
+      });
+      const data = await res.json();
+      if (data.error) { setPcsError(data.error); }
+      else if (data.results?.length > 0) {
+        updateProfile({ pcsResults: data.results, pcsLastSync: new Date().toISOString() });
+        setSaveFlash(true);
+        setTimeout(() => setSaveFlash(false), 2500);
+      } else {
+        setPcsError("No results found on that page — check your PCS URL.");
+      }
+    } catch { setPcsError("Sync failed — check your connection."); }
+    finally { setSyncingPcs(false); }
+  }
   const [scoutViewCount, setScoutViewCount] = useState<number | null>(null);
   const [scoutViewList, setScoutViewList] = useState<Array<{
     scout_first_name: string; scout_last_name: string;
@@ -1896,6 +1925,61 @@ export default function Dashboard() {
                   </div>
                 )}
               </Section>
+
+              {/* ProCyclingStats Palmares */}
+              {isAthlete(user) && (
+                <Section
+                  title="Palmares · ProCyclingStats"
+                  icon={
+                    <svg className="w-4 h-4 text-coral" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+                    </svg>
+                  }
+                >
+                  {!user.procyclingstatsUrl ? (
+                    <p className="text-earth/60 text-xs leading-relaxed">
+                      Add your ProCyclingStats URL in your profile to sync race results automatically.
+                    </p>
+                  ) : (
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <a href={user.procyclingstatsUrl} target="_blank" rel="noopener noreferrer"
+                          className="text-xs text-coral hover:underline font-medium truncate max-w-[180px]">
+                          View full profile →
+                        </a>
+                        <button
+                          onClick={handlePcsSync}
+                          disabled={syncingPcs}
+                          className="ml-auto text-xs font-semibold border border-coral/40 text-coral hover:bg-coral hover:text-white px-3 py-1 rounded-full transition-all disabled:opacity-50"
+                        >
+                          {syncingPcs ? "Syncing…" : user.pcsResults?.length ? "Re-sync" : "Sync results"}
+                        </button>
+                      </div>
+                      {pcsError && <p className="text-coral text-xs bg-coral/5 border border-coral/20 rounded-xl p-2">{pcsError}</p>}
+                      {user.pcsResults && user.pcsResults.length > 0 ? (
+                        <ul className="space-y-1.5">
+                          {user.pcsResults.map((r, i) => (
+                            <li key={i} className="flex items-center gap-2 text-xs">
+                              <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 ${r.position === 1 ? "bg-coral/15 text-coral" : r.position <= 3 ? "bg-navy/10 text-navy" : "bg-stone/40 text-earth"}`}>
+                                {r.position}
+                              </span>
+                              <a href={r.raceUrl} target="_blank" rel="noopener noreferrer" className="flex-1 text-navy-deep hover:text-coral truncate">
+                                {r.race} {r.year && <span className="text-earth/50">{r.year}</span>}
+                              </a>
+                              {r.category && <span className="text-[10px] text-earth/50 shrink-0">{r.category}</span>}
+                            </li>
+                          ))}
+                        </ul>
+                      ) : (
+                        <p className="text-earth/50 text-xs">No results synced yet — tap Sync results.</p>
+                      )}
+                      {user.pcsLastSync && (
+                        <p className="text-[10px] text-earth/30">Last synced: {new Date(user.pcsLastSync).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}</p>
+                      )}
+                    </div>
+                  )}
+                </Section>
+              )}
 
               {/* Lab Results */}
               <Section
