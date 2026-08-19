@@ -47,6 +47,10 @@ export interface Athlete {
   // Demographics
   sex?: string; // "male" | "female" | "prefer not to say"
 
+  // Lab results
+  labResultsUrl?: string;
+  labResultsFileName?: string;
+
   // Social
   followers: number;
   verified: boolean;

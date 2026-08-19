@@ -153,6 +153,11 @@ export default function AthleteCard({ athlete, showPower = false }: AthleteCardP
               Strava
             </span>
           )}
+          {athlete.labResultsUrl && (
+            <span className="text-[10px] uppercase tracking-wider text-olive bg-olive/10 px-2 py-0.5 rounded-full font-medium">
+              Lab Certified
+            </span>
+          )}
         </div>
       </div>
     </a>

@@ -56,6 +56,9 @@ export interface AthleteProfile {
   stravaYTDHours?: number;
   stravaTotalSufferScore?: number;
   instagramUrl?: string;
+  // Lab results
+  labResultsUrl?: string;
+  labResultsFileName?: string;
   // Profile
   profileImage?: string;
   videoUrl: string;

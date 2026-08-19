@@ -347,6 +347,8 @@ export default function Dashboard() {
   const [stravaMsg, setStravaMsg]       = useState<{ type: "success" | "error" | "info"; text: string } | null>(null);
   const [stravaSyncing, setStravaSyncing] = useState(false);
   const [pendingStravaData, setPendingStravaData] = useState<Partial<AthleteProfile> | null>(null);
+  const [uploadingLabResults, setUploadingLabResults] = useState(false);
+  const [labResultsError, setLabResultsError] = useState<string | null>(null);
   const [scoutViewCount, setScoutViewCount] = useState<number | null>(null);
   const [scoutViewList, setScoutViewList] = useState<Array<{
     scout_first_name: string; scout_last_name: string;
@@ -1022,6 +1024,60 @@ export default function Dashboard() {
     setVideoUrlInput("");
   }
 
+  // ── Lab results upload ────────────────────────────────────────────────────
+  async function handleLabResultsUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    e.target.value = "";
+
+    const ALLOWED = ["application/pdf", "image/jpeg", "image/png", "image/tiff"];
+    const ext = (file.name.split(".").pop() || "").toLowerCase();
+    const allowedExts = ["pdf", "jpg", "jpeg", "png", "tif", "tiff"];
+    if (!ALLOWED.includes(file.type) && !allowedExts.includes(ext)) {
+      setLabResultsError("Please upload a PDF, JPG, or PNG file.");
+      return;
+    }
+
+    const MAX_BYTES = 10 * 1024 * 1024;
+    if (file.size > MAX_BYTES) {
+      setLabResultsError(`File is ${(file.size / 1024 / 1024).toFixed(0)} MB — please keep it under 10 MB.`);
+      return;
+    }
+
+    setUploadingLabResults(true);
+    setLabResultsError(null);
+
+    try {
+      if (!supabase) throw new Error("no-supabase");
+
+      const path = `${user?.id ?? "unknown"}/lab-results.${ext || "pdf"}`;
+      await supabase.storage.from("lab-results").remove([path]);
+
+      const { error: uploadErr } = await supabase.storage
+        .from("lab-results")
+        .upload(path, file, { upsert: false, cacheControl: "3600", contentType: file.type || "application/pdf" });
+
+      if (uploadErr) throw uploadErr;
+
+      const { data: { publicUrl } } = supabase.storage.from("lab-results").getPublicUrl(path);
+
+      updateProfile({ labResultsUrl: publicUrl, labResultsFileName: file.name });
+      setSaveFlash(true);
+      setTimeout(() => setSaveFlash(false), 2500);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      if (msg === "no-supabase") {
+        setLabResultsError("Storage not available. Please try again later.");
+      } else if (msg.toLowerCase().includes("bucket not found") || msg.toLowerCase().includes("not found")) {
+        setLabResultsError("Storage bucket not yet created. Run the SQL setup in your Supabase dashboard.");
+      } else {
+        setLabResultsError(`Upload failed: ${msg}`);
+      }
+    } finally {
+      setUploadingLabResults(false);
+    }
+  }
+
   // ── Thumbnail upload ──────────────────────────────────────────────────────
   function handleThumbnailUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -1579,6 +1635,81 @@ export default function Dashboard() {
                       </p>
                     )}
                   </div>
+                )}
+              </Section>
+
+              {/* Lab Results */}
+              <Section
+                title="Lab Test Results"
+                icon={
+                  <svg className="w-4 h-4 text-olive" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                }
+              >
+                <p className="text-earth/60 text-xs leading-relaxed mb-4">
+                  Upload certified lab results (VO₂max, metabolic test, blood lactate, etc.) to add a <strong className="text-olive">Lab Certified</strong> badge to your profile. Visible to verified scouts only.
+                </p>
+
+                {isAthlete(user) && user.labResultsUrl ? (
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-3 p-3 bg-olive/5 border border-olive/20 rounded-xl">
+                      <div className="w-9 h-9 rounded-lg bg-olive/15 flex items-center justify-center shrink-0">
+                        <svg className="w-5 h-5 text-olive" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-warm-black text-xs font-semibold truncate">
+                          {user.labResultsFileName ?? "Lab Results"}
+                        </p>
+                        <span className="text-[10px] font-semibold text-olive bg-olive/10 px-2 py-0.5 rounded-full">Lab Certified ✓</span>
+                      </div>
+                      <a href={user.labResultsUrl} target="_blank" rel="noopener noreferrer"
+                        className="text-xs font-semibold text-earth/50 hover:text-coral transition-colors shrink-0">
+                        View
+                      </a>
+                    </div>
+                    <div className="flex gap-2">
+                      <label className="flex-1 cursor-pointer flex items-center justify-center gap-1.5 text-xs font-semibold border border-olive/40 text-olive hover:bg-olive hover:text-white px-3 py-2 rounded-full transition-all">
+                        {uploadingLabResults ? "Uploading…" : "Replace document"}
+                        <input type="file" accept=".pdf,.jpg,.jpeg,.png,.tif,.tiff" className="sr-only" onChange={handleLabResultsUpload} disabled={uploadingLabResults} />
+                      </label>
+                      <button
+                        onClick={() => updateProfile({ labResultsUrl: "", labResultsFileName: "" })}
+                        className="text-xs font-semibold text-earth/60 hover:text-coral border border-stone/30 px-3 py-2 rounded-full transition-colors"
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <label className={`group block cursor-pointer border-2 border-dashed rounded-xl p-5 text-center transition-colors ${uploadingLabResults ? "border-olive/30 bg-olive/5" : "border-stone/30 hover:border-olive/40 hover:bg-olive/5"}`}>
+                    <input type="file" accept=".pdf,.jpg,.jpeg,.png,.tif,.tiff" className="sr-only" onChange={handleLabResultsUpload} disabled={uploadingLabResults} />
+                    {uploadingLabResults ? (
+                      <div className="flex flex-col items-center gap-2">
+                        <svg className="w-7 h-7 text-olive animate-spin" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+                        </svg>
+                        <p className="text-olive text-sm font-semibold">Uploading…</p>
+                      </div>
+                    ) : (
+                      <div className="flex flex-col items-center gap-2">
+                        <div className="w-12 h-12 rounded-full bg-olive/10 flex items-center justify-center group-hover:bg-olive/20 transition-colors">
+                          <svg className="w-6 h-6 text-olive" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                          </svg>
+                        </div>
+                        <p className="text-navy-deep font-semibold text-sm">Upload lab results document</p>
+                        <p className="text-earth/50 text-xs">PDF, JPG, or PNG · up to 10 MB</p>
+                        <span className="inline-block text-xs text-olive font-semibold bg-olive/10 px-4 py-2 rounded-full mt-1">Choose file</span>
+                      </div>
+                    )}
+                  </label>
+                )}
+                {labResultsError && (
+                  <p className="text-coral text-xs mt-2 leading-relaxed bg-coral/5 border border-coral/20 rounded-xl p-3">{labResultsError}</p>
                 )}
               </Section>
             </div>
