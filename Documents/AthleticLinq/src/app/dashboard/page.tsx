@@ -1161,10 +1161,16 @@ export default function Dashboard() {
     if (!file) return;
     e.target.value = "";
 
-    const ALLOWED = ["application/pdf", "image/jpeg", "image/png", "image/tiff"];
     const ext = (file.name.split(".").pop() || "").toLowerCase();
     const allowedExts = ["pdf", "jpg", "jpeg", "png", "tif", "tiff"];
-    if (!ALLOWED.includes(file.type) && !allowedExts.includes(ext)) {
+    // On mobile, cloud-storage files (OneDrive, iCloud) often arrive as
+    // application/octet-stream — trust the file extension instead
+    const ALLOWED_MIME = ["application/pdf", "image/jpeg", "image/png", "image/tiff", "application/octet-stream", ""];
+    if (!ALLOWED_MIME.includes(file.type) && !allowedExts.includes(ext)) {
+      setLabResultsError("Please upload a PDF, JPG, or PNG file.");
+      return;
+    }
+    if (!allowedExts.includes(ext)) {
       setLabResultsError("Please upload a PDF, JPG, or PNG file.");
       return;
     }
@@ -1184,9 +1190,12 @@ export default function Dashboard() {
       const path = `${user?.id ?? "unknown"}/lab-results.${ext || "pdf"}`;
       await supabase.storage.from("lab-results").remove([path]);
 
+      const MIME_BY_EXT: Record<string, string> = { pdf: "application/pdf", jpg: "image/jpeg", jpeg: "image/jpeg", png: "image/png", tif: "image/tiff", tiff: "image/tiff" };
+      const contentType = (file.type && file.type !== "application/octet-stream") ? file.type : (MIME_BY_EXT[ext] ?? "application/pdf");
+
       const { error: uploadErr } = await supabase.storage
         .from("lab-results")
-        .upload(path, file, { upsert: false, cacheControl: "3600", contentType: file.type || "application/pdf" });
+        .upload(path, file, { upsert: false, cacheControl: "3600", contentType });
 
       if (uploadErr) throw uploadErr;
 
@@ -1202,7 +1211,7 @@ export default function Dashboard() {
         const aiRes = await fetch("/.netlify/functions/analyze-lab-results", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ fileUrl: publicUrl, contentType: file.type || "application/pdf" }),
+          body: JSON.stringify({ fileUrl: publicUrl, contentType }),
         });
         if (aiRes.ok) {
           const extracted = await aiRes.json();
@@ -1824,7 +1833,7 @@ export default function Dashboard() {
                     <div className="flex gap-2">
                       <label className="flex-1 cursor-pointer flex items-center justify-center gap-1.5 text-xs font-semibold border border-olive/40 text-olive hover:bg-olive hover:text-white px-3 py-2 rounded-full transition-all">
                         {uploadingLabResults ? "Uploading…" : "Replace document"}
-                        <input type="file" accept=".pdf,.jpg,.jpeg,.png,.tif,.tiff" className="sr-only" onChange={handleLabResultsUpload} disabled={uploadingLabResults} />
+                        <input type="file" accept=".pdf,.jpg,.jpeg,.png,.tif,.tiff,application/pdf,image/jpeg,image/png,image/tiff" className="sr-only" onChange={handleLabResultsUpload} disabled={uploadingLabResults} />
                       </label>
                       <button
                         onClick={() => updateProfile({ labResultsUrl: "", labResultsFileName: "" })}
@@ -1836,7 +1845,7 @@ export default function Dashboard() {
                   </div>
                 ) : (
                   <label className={`group block cursor-pointer border-2 border-dashed rounded-xl p-5 text-center transition-colors ${uploadingLabResults ? "border-olive/30 bg-olive/5" : "border-stone/30 hover:border-olive/40 hover:bg-olive/5"}`}>
-                    <input type="file" accept=".pdf,.jpg,.jpeg,.png,.tif,.tiff" className="sr-only" onChange={handleLabResultsUpload} disabled={uploadingLabResults} />
+                    <input type="file" accept=".pdf,.jpg,.jpeg,.png,.tif,.tiff,application/pdf,image/jpeg,image/png,image/tiff" className="sr-only" onChange={handleLabResultsUpload} disabled={uploadingLabResults} />
                     {uploadingLabResults ? (
                       <div className="flex flex-col items-center gap-2">
                         <svg className="w-7 h-7 text-olive animate-spin" fill="none" viewBox="0 0 24 24">
