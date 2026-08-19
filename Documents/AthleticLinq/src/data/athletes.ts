@@ -73,6 +73,11 @@ export interface Athlete {
   verified: boolean;
   palmares: string[];
   tags: string[];
+
+  // ProCyclingStats
+  procyclingstatsUrl?: string;
+  pcsResults?: Array<{ year: string; race: string; position: number; category: string; raceUrl: string }>;
+  pcsLastSync?: string;
 }
 
 /**

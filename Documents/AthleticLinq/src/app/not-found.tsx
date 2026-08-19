@@ -487,9 +487,9 @@ export default function NotFound() {
               </div>
 
               {/* PCS synced results */}
-              {(athlete as { pcsResults?: Array<{ year: string; race: string; position: number; category: string; raceUrl: string }> }).pcsResults?.length ? (
+              {athlete.pcsResults?.length ? (
                 <ul className="space-y-2.5">
-                  {(athlete as { pcsResults: Array<{ year: string; race: string; position: number; category: string; raceUrl: string }> }).pcsResults.map((r, i) => (
+                  {athlete.pcsResults.map((r, i) => (
                     <li key={i} className="flex items-center gap-3 text-sm">
                       <div className={`w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 text-xs font-bold
                         ${r.position === 1 ? "bg-coral/10 text-coral" : r.position <= 3 ? "bg-navy/10 text-navy" : "bg-stone/40 text-earth"}`}>
