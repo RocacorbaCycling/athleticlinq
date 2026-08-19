@@ -1,6 +1,7 @@
 import type { Athlete } from "@/data/athletes";
 import { getUCILevel } from "@/data/athletes";
 import CompoundScore from "./CompoundScore";
+import FavouriteButton from "./FavouriteButton";
 
 interface AthleteCardProps {
   athlete: Athlete;
@@ -53,11 +54,17 @@ export default function AthleteCard({ athlete, showPower = false }: AthleteCardP
             )}
           </div>
 
-          {/* Age badge */}
-          <div className="absolute top-3 right-3">
+          {/* Age badge + favourite star */}
+          <div className="absolute top-3 right-3 flex items-center gap-1.5">
             <span className="bg-olive/80 backdrop-blur-sm text-white text-xs font-medium px-2.5 py-1 rounded-full">
               Age {athlete.age}
             </span>
+            <FavouriteButton
+              athleteId={athlete.id}
+              athleteFirstName={athlete.firstName}
+              athleteLastName={athlete.lastName}
+              variant="card"
+            />
           </div>
 
           {/* Bottom name strip */}

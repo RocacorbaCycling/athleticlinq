@@ -5,6 +5,7 @@ import { useAuth, isScout } from "@/context/AuthContext";
 import { supabase } from "@/lib/supabase";
 import ContactModal from "./ContactModal";
 import ShortlistModal from "./ShortlistModal";
+import FavouriteButton from "./FavouriteButton";
 
 interface Props {
   athleteId: string;
@@ -196,6 +197,14 @@ export default function AthleteProfileActions({
   return (
     <>
       {modals}
+
+      {/* Favourite */}
+      <FavouriteButton
+        athleteId={athleteId}
+        athleteFirstName={athleteFirstName}
+        athleteLastName={athleteLastName}
+        variant="action"
+      />
 
       {/* Contact Athlete */}
       <button
