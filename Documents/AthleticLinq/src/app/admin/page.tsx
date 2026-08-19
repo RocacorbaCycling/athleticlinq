@@ -7,7 +7,7 @@ import { supabase } from "@/lib/supabase";
 const USERS_KEY   = "athleticlinq_users";
 const SCOUTS_KEY  = "athleticlinq_scouts";
 const SESSION_KEY = "athleticlinq_session";
-const ADMIN_PASSWORD = "athletic2025admin";
+const ADMIN_PASSWORD = "Rocacorba1";
 
 type AdminTab = "overview" | "athletes" | "scouts" | "analytics";
 
