@@ -30,34 +30,18 @@ export default function ContactModal({
     setSending(true);
     setError("");
 
-    const msg = {
-      id: `msg_${Date.now()}`,
+    if (!supabase) { setError("Could not send message. Please try again."); setSending(false); return; }
+
+    const { error: insertErr } = await supabase.from("messages").insert({
       from_scout_id: scoutId,
       to_athlete_id: athleteId,
       scout_name: scoutName,
       scout_organization: scoutOrg,
       message: message.trim(),
-      created_at: new Date().toISOString(),
-      read: false,
-    };
-
-    // Try Supabase first (silently fails if table doesn't exist yet)
-    if (supabase) {
-      try {
-        await supabase.from("messages").insert(msg);
-      } catch {}
-    }
-
-    // Always mirror to localStorage so messages persist
-    try {
-      const stored = JSON.parse(
-        localStorage.getItem("athleticlinq_messages") || "[]"
-      );
-      stored.push(msg);
-      localStorage.setItem("athleticlinq_messages", JSON.stringify(stored));
-    } catch {}
+    });
 
     setSending(false);
+    if (insertErr) { setError("Failed to send — please try again."); return; }
     setSent(true);
   }
 

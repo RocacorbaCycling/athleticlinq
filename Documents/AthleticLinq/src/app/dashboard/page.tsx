@@ -391,6 +391,17 @@ export default function Dashboard() {
   };
   const [scoutFavourites, setScoutFavourites] = useState<FavouriteAthlete[]>([]);
 
+  type InboxMessage = {
+    id: string;
+    from_scout_id: string;
+    scout_name: string;
+    scout_organization: string;
+    message: string;
+    created_at: string;
+    read: boolean;
+  };
+  const [inboxMessages, setInboxMessages] = useState<InboxMessage[]>([]);
+
   useEffect(() => {
     if (!isLoading && !user) router.push("/login");
   }, [user, isLoading, router]);
@@ -455,6 +466,19 @@ export default function Dashboard() {
           };
         });
         setScoutFavourites(merged);
+      });
+  }, [user]);
+
+  // Fetch direct messages for athletes/parents
+  useEffect(() => {
+    if (!user || isScout(user) || !supabase) return;
+    supabase
+      .from("messages")
+      .select("id, from_scout_id, scout_name, scout_organization, message, created_at, read")
+      .eq("to_athlete_id", user.id)
+      .order("created_at", { ascending: false })
+      .then(({ data }) => {
+        if (data) setInboxMessages(data as InboxMessage[]);
       });
   }, [user]);
 
@@ -2024,6 +2048,58 @@ export default function Dashboard() {
                                 Decline
                               </button>
                             </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </Section>
+              )}
+
+              {/* Direct Messages from Scouts */}
+              {!isScout(user) && (
+                <Section
+                  title="Messages"
+                  icon={
+                    <svg className="w-4 h-4 text-coral" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8}
+                        d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+                    </svg>
+                  }
+                >
+                  {inboxMessages.length === 0 ? (
+                    <div className="text-center py-2">
+                      <p className="text-earth/60 text-sm">No messages yet</p>
+                      <p className="text-earth/40 text-xs mt-1">Scouts who contact you will appear here</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {inboxMessages.map((msg) => (
+                        <div key={msg.id} className={`rounded-xl border p-3 text-sm ${msg.read ? "border-stone/20 bg-stone/5" : "border-coral/25 bg-coral/5"}`}>
+                          <div className="flex items-start justify-between gap-2 mb-1.5">
+                            <div>
+                              <p className="font-semibold text-navy-deep text-xs">{msg.scout_name}</p>
+                              {msg.scout_organization && <p className="text-earth/60 text-[11px]">{msg.scout_organization}</p>}
+                            </div>
+                            <div className="flex items-center gap-1.5 shrink-0">
+                              {!msg.read && <span className="w-2 h-2 rounded-full bg-coral inline-block" />}
+                              <span className="text-[10px] text-earth/40">
+                                {new Date(msg.created_at).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}
+                              </span>
+                            </div>
+                          </div>
+                          <p className="text-earth/80 text-xs leading-relaxed">{msg.message}</p>
+                          {!msg.read && (
+                            <button
+                              onClick={async () => {
+                                if (!supabase) return;
+                                await supabase.from("messages").update({ read: true }).eq("id", msg.id);
+                                setInboxMessages((prev) => prev.map((m) => m.id === msg.id ? { ...m, read: true } : m));
+                              }}
+                              className="mt-2 text-[10px] text-coral hover:underline"
+                            >
+                              Mark as read
+                            </button>
                           )}
                         </div>
                       ))}
