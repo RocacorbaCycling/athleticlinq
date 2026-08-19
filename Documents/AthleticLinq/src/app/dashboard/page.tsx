@@ -335,38 +335,6 @@ function EditModal({
 }
 
 // ── PCS URL inline input ──────────────────────────────────────────────────────
-function PcsUrlInput({ user, onSave }: { user: AthleteProfile; onSave: (url: string) => void }) {
-  const [editing, setEditing] = useState(false);
-  const [val, setVal] = useState(user.procyclingstatsUrl ?? "");
-
-  if (!editing && user.procyclingstatsUrl) return null; // hidden once set; shown via sync row
-
-  return editing ? (
-    <div className="flex gap-2 items-center">
-      <input
-        autoFocus
-        type="url"
-        value={val}
-        onChange={(e) => setVal(e.target.value)}
-        placeholder="https://www.procyclingstats.com/rider/your-name"
-        className="flex-1 text-xs px-3 py-2 border border-stone/40 rounded-xl focus:outline-none focus:border-coral/50"
-      />
-      <button
-        onClick={() => { onSave(val.trim()); setEditing(false); }}
-        disabled={!val.trim()}
-        className="text-xs font-semibold bg-coral text-white px-3 py-2 rounded-full disabled:opacity-40"
-      >Save</button>
-      <button onClick={() => setEditing(false)} className="text-xs text-earth/50 px-2">✕</button>
-    </div>
-  ) : (
-    <button
-      onClick={() => setEditing(true)}
-      className="w-full text-xs text-coral border border-coral/30 hover:bg-coral/5 rounded-xl px-3 py-2 text-left transition-colors"
-    >
-      + Add your ProCyclingStats URL to sync race results
-    </button>
-  );
-}
 
 // ── Dashboard ─────────────────────────────────────────────────────────────────
 export default function Dashboard() {
@@ -388,30 +356,27 @@ export default function Dashboard() {
   const [uploadingLabResults, setUploadingLabResults] = useState(false);
   const [labResultsError, setLabResultsError] = useState<string | null>(null);
   const [analyzingLab, setAnalyzingLab] = useState(false);
-  const [syncingPcs, setSyncingPcs] = useState(false);
-  const [pcsError, setPcsError] = useState<string | null>(null);
+  const [addingResult, setAddingResult]     = useState(false);
+  const [newRace, setNewRace]               = useState("");
+  const [newYear, setNewYear]               = useState(String(new Date().getFullYear()));
+  const [newPos, setNewPos]                 = useState("");
+  const [newCat, setNewCat]                 = useState("");
+  const [editingPcsUrl, setEditingPcsUrl]   = useState(false);
+  const [pcsUrlDraft, setPcsUrlDraft]       = useState("");
 
-  async function handlePcsSync() {
-    if (!user || !isAthlete(user) || !user.procyclingstatsUrl) return;
-    setSyncingPcs(true);
-    setPcsError(null);
-    try {
-      const res = await fetch("/.netlify/functions/scrape-pcs-results", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ pcsUrl: user.procyclingstatsUrl }),
-      });
-      const data = await res.json();
-      if (data.error) { setPcsError(data.error); }
-      else if (data.results?.length > 0) {
-        updateProfile({ pcsResults: data.results, pcsLastSync: new Date().toISOString() });
-        setSaveFlash(true);
-        setTimeout(() => setSaveFlash(false), 2500);
-      } else {
-        setPcsError("No results found on that page — check your PCS URL.");
-      }
-    } catch { setPcsError("Sync failed — check your connection."); }
-    finally { setSyncingPcs(false); }
+  function handleAddResult() {
+    if (!newRace.trim() || !newPos) return;
+    const pos = parseInt(newPos, 10);
+    if (isNaN(pos) || pos < 1) return;
+    const existing = isAthlete(user) ? (user.pcsResults ?? []) : [];
+    updateProfile({ pcsResults: [...existing, { race: newRace.trim(), year: newYear, position: pos, category: newCat.trim(), raceUrl: "" }] });
+    setNewRace(""); setNewYear(String(new Date().getFullYear())); setNewPos(""); setNewCat("");
+    setAddingResult(false);
+  }
+
+  function handleDeleteResult(idx: number) {
+    if (!isAthlete(user)) return;
+    updateProfile({ pcsResults: (user.pcsResults ?? []).filter((_, i) => i !== idx) });
   }
   const [scoutViewCount, setScoutViewCount] = useState<number | null>(null);
   const [scoutViewList, setScoutViewList] = useState<Array<{
@@ -1960,56 +1925,96 @@ export default function Dashboard() {
                 )}
               </Section>
 
-              {/* ProCyclingStats Palmares */}
+              {/* Palmarès */}
               {isAthlete(user) && (
                 <Section
-                  title="Palmares · ProCyclingStats"
+                  title="Palmarès"
                   icon={
                     <svg className="w-4 h-4 text-coral" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
                     </svg>
                   }
                 >
-                  {/* Inline PCS URL input — always visible */}
-                  <PcsUrlInput user={user} onSave={(url) => updateProfile({ procyclingstatsUrl: url })} />
-
-                  {!user.procyclingstatsUrl ? null : (
-                    <div className="space-y-3">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <a href={user.procyclingstatsUrl} target="_blank" rel="noopener noreferrer"
-                          className="text-xs text-coral hover:underline font-medium truncate max-w-[180px]">
-                          View full profile →
-                        </a>
-                        <button
-                          onClick={handlePcsSync}
-                          disabled={syncingPcs}
-                          className="ml-auto text-xs font-semibold border border-coral/40 text-coral hover:bg-coral hover:text-white px-3 py-1 rounded-full transition-all disabled:opacity-50"
-                        >
-                          {syncingPcs ? "Syncing…" : user.pcsResults?.length ? "Re-sync" : "Sync results"}
-                        </button>
-                      </div>
-                      {pcsError && <p className="text-coral text-xs bg-coral/5 border border-coral/20 rounded-xl p-2">{pcsError}</p>}
-                      {user.pcsResults && user.pcsResults.length > 0 ? (
-                        <ul className="space-y-1.5">
-                          {user.pcsResults.map((r, i) => (
-                            <li key={i} className="flex items-center gap-2 text-xs">
-                              <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 ${r.position === 1 ? "bg-coral/15 text-coral" : r.position <= 3 ? "bg-navy/10 text-navy" : "bg-stone/40 text-earth"}`}>
-                                {r.position}
-                              </span>
-                              <a href={r.raceUrl} target="_blank" rel="noopener noreferrer" className="flex-1 text-navy-deep hover:text-coral truncate">
-                                {r.race} {r.year && <span className="text-earth/50">{r.year}</span>}
-                              </a>
-                              {r.category && <span className="text-[10px] text-earth/50 shrink-0">{r.category}</span>}
-                            </li>
-                          ))}
-                        </ul>
-                      ) : (
-                        <p className="text-earth/50 text-xs">No results synced yet — tap Sync results.</p>
-                      )}
-                      {user.pcsLastSync && (
-                        <p className="text-[10px] text-earth/30">Last synced: {new Date(user.pcsLastSync).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}</p>
-                      )}
+                  {/* PCS profile link */}
+                  {user.procyclingstatsUrl && !editingPcsUrl ? (
+                    <div className="flex items-center gap-2 mb-4 p-2.5 bg-stone/20 rounded-xl">
+                      <a href={user.procyclingstatsUrl} target="_blank" rel="noopener noreferrer"
+                        className="flex-1 text-xs text-coral font-medium hover:underline truncate flex items-center gap-1.5">
+                        <svg className="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                        </svg>
+                        ProCyclingStats profile
+                      </a>
+                      <button onClick={() => { setPcsUrlDraft(user.procyclingstatsUrl ?? ""); setEditingPcsUrl(true); }}
+                        className="text-[10px] text-earth/40 hover:text-earth shrink-0">Edit</button>
                     </div>
+                  ) : editingPcsUrl ? (
+                    <div className="flex gap-2 items-center mb-4">
+                      <input autoFocus type="url" value={pcsUrlDraft} onChange={(e) => setPcsUrlDraft(e.target.value)}
+                        placeholder="https://www.procyclingstats.com/rider/your-name"
+                        className="flex-1 text-xs px-3 py-2 border border-stone/40 rounded-xl focus:outline-none focus:border-coral/50" />
+                      <button onClick={() => { updateProfile({ procyclingstatsUrl: pcsUrlDraft.trim() }); setEditingPcsUrl(false); }}
+                        disabled={!pcsUrlDraft.trim()}
+                        className="text-xs font-semibold bg-coral text-white px-3 py-2 rounded-full disabled:opacity-40">Save</button>
+                      <button onClick={() => setEditingPcsUrl(false)} className="text-xs text-earth/50 px-2">✕</button>
+                    </div>
+                  ) : (
+                    <button onClick={() => setEditingPcsUrl(true)}
+                      className="w-full text-xs text-earth/50 border border-dashed border-stone/40 hover:border-coral/40 hover:text-coral rounded-xl px-3 py-2 text-left transition-colors mb-4">
+                      + Add your ProCyclingStats profile link
+                    </button>
+                  )}
+
+                  {/* Results list */}
+                  {user.pcsResults && user.pcsResults.length > 0 && (
+                    <ul className="space-y-1.5 mb-3">
+                      {user.pcsResults.map((r, i) => (
+                        <li key={i} className="flex items-center gap-2 text-xs group">
+                          <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 ${r.position === 1 ? "bg-coral/15 text-coral" : r.position <= 3 ? "bg-navy/10 text-navy" : "bg-stone/40 text-earth"}`}>
+                            {r.position}
+                          </span>
+                          <span className="flex-1 text-navy-deep truncate">
+                            {r.race}{r.year && <span className="text-earth/50 ml-1">{r.year}</span>}
+                          </span>
+                          {r.category && <span className="text-[10px] text-earth/50 shrink-0">{r.category}</span>}
+                          <button onClick={() => handleDeleteResult(i)}
+                            className="text-earth/20 hover:text-coral opacity-0 group-hover:opacity-100 transition-opacity text-[10px] shrink-0 ml-1">✕</button>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+
+                  {/* Add result form */}
+                  {addingResult ? (
+                    <div className="border border-stone/40 rounded-xl p-3 space-y-2 mt-2">
+                      <input autoFocus type="text" value={newRace} onChange={(e) => setNewRace(e.target.value)}
+                        placeholder="Race name (e.g. Tour de l'Avenir)"
+                        className="w-full text-xs px-3 py-2 border border-stone/40 rounded-lg focus:outline-none focus:border-coral/50" />
+                      <div className="flex gap-2">
+                        <input type="number" value={newPos} onChange={(e) => setNewPos(e.target.value)}
+                          placeholder="Position" min="1" max="999"
+                          className="w-24 text-xs px-3 py-2 border border-stone/40 rounded-lg focus:outline-none focus:border-coral/50" />
+                        <input type="number" value={newYear} onChange={(e) => setNewYear(e.target.value)}
+                          placeholder="Year" min="2000" max="2030"
+                          className="w-24 text-xs px-3 py-2 border border-stone/40 rounded-lg focus:outline-none focus:border-coral/50" />
+                        <input type="text" value={newCat} onChange={(e) => setNewCat(e.target.value)}
+                          placeholder="Category (optional)"
+                          className="flex-1 text-xs px-3 py-2 border border-stone/40 rounded-lg focus:outline-none focus:border-coral/50" />
+                      </div>
+                      <div className="flex gap-2 pt-1">
+                        <button onClick={handleAddResult} disabled={!newRace.trim() || !newPos}
+                          className="text-xs font-semibold bg-coral text-white px-4 py-1.5 rounded-full disabled:opacity-40">
+                          Add result
+                        </button>
+                        <button onClick={() => { setAddingResult(false); setNewRace(""); setNewPos(""); setNewCat(""); }}
+                          className="text-xs text-earth/50 hover:text-earth px-2">Cancel</button>
+                      </div>
+                    </div>
+                  ) : (
+                    <button onClick={() => setAddingResult(true)}
+                      className="w-full text-xs text-coral border border-coral/30 hover:bg-coral/5 rounded-xl px-3 py-2 text-left transition-colors">
+                      + Add a race result
+                    </button>
                   )}
                 </Section>
               )}
