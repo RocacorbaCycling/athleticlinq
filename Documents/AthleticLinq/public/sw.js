@@ -1,4 +1,4 @@
-const CACHE = "athleticlinq-v1";
+const CACHE = "athleticlinq-v2";
 
 const PRECACHE = [
   "/",
