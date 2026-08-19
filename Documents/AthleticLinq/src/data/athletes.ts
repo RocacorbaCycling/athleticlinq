@@ -1,3 +1,19 @@
+export interface LabExtractedData {
+  vo2max?: number;
+  ltWatts1?: number;
+  ltWatts2?: number;
+  ltHr1?: number;
+  ltHr2?: number;
+  ftpLab?: number;
+  maxHr?: number;
+  powerAtVo2max?: number;
+  vLamax?: number;
+  testDate?: string;
+  labName?: string;
+  notes?: string;
+  extractedAt?: string;
+}
+
 export interface Athlete {
   id: string;
   firstName: string;
@@ -50,6 +66,7 @@ export interface Athlete {
   // Lab results
   labResultsUrl?: string;
   labResultsFileName?: string;
+  labExtractedData?: LabExtractedData;
 
   // Social
   followers: number;

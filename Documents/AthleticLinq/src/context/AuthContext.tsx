@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useEffect, useState, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
+import type { LabExtractedData } from "@/data/athletes";
 
 // ── Athlete ──────────────────────────────────────────────────────────────────
 export interface AthleteProfile {
@@ -59,6 +60,7 @@ export interface AthleteProfile {
   // Lab results
   labResultsUrl?: string;
   labResultsFileName?: string;
+  labExtractedData?: LabExtractedData;
   // Profile
   profileImage?: string;
   videoUrl: string;

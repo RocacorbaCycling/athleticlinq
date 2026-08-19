@@ -349,6 +349,7 @@ export default function Dashboard() {
   const [pendingStravaData, setPendingStravaData] = useState<Partial<AthleteProfile> | null>(null);
   const [uploadingLabResults, setUploadingLabResults] = useState(false);
   const [labResultsError, setLabResultsError] = useState<string | null>(null);
+  const [analyzingLab, setAnalyzingLab] = useState(false);
   const [scoutViewCount, setScoutViewCount] = useState<number | null>(null);
   const [scoutViewList, setScoutViewList] = useState<Array<{
     scout_first_name: string; scout_last_name: string;
@@ -1194,6 +1195,26 @@ export default function Dashboard() {
       updateProfile({ labResultsUrl: publicUrl, labResultsFileName: file.name });
       setSaveFlash(true);
       setTimeout(() => setSaveFlash(false), 2500);
+
+      // ── AI extraction (non-blocking — failure is silent) ──────────────────
+      setAnalyzingLab(true);
+      try {
+        const aiRes = await fetch("/.netlify/functions/analyze-lab-results", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ fileUrl: publicUrl, contentType: file.type || "application/pdf" }),
+        });
+        if (aiRes.ok) {
+          const extracted = await aiRes.json();
+          if (extracted && !extracted.error) {
+            updateProfile({ labExtractedData: extracted });
+          }
+        }
+      } catch {
+        // Non-fatal — extraction is a bonus, not critical
+      } finally {
+        setAnalyzingLab(false);
+      }
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
       if (msg === "no-supabase") {
@@ -1841,6 +1862,54 @@ export default function Dashboard() {
                 {labResultsError && (
                   <p className="text-coral text-xs mt-2 leading-relaxed bg-coral/5 border border-coral/20 rounded-xl p-3">{labResultsError}</p>
                 )}
+                {analyzingLab && (
+                  <div className="flex items-center gap-2 mt-3 text-xs text-olive">
+                    <svg className="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+                    </svg>
+                    AI is reading your lab results…
+                  </div>
+                )}
+                {isAthlete(user) && user.labExtractedData && (() => {
+                  const d = user.labExtractedData!;
+                  const metrics = [
+                    { label: "VO₂max", value: d.vo2max ? `${d.vo2max}` : null, unit: "ml/kg/min" },
+                    { label: "Lab FTP", value: d.ftpLab ? `${d.ftpLab}` : null, unit: "W" },
+                    { label: "LT1", value: d.ltWatts1 ? `${d.ltWatts1}` : null, unit: "W" },
+                    { label: "LT2", value: d.ltWatts2 ? `${d.ltWatts2}` : null, unit: "W" },
+                    { label: "Max HR", value: d.maxHr ? `${d.maxHr}` : null, unit: "bpm" },
+                    { label: "W@VO₂max", value: d.powerAtVo2max ? `${d.powerAtVo2max}` : null, unit: "W" },
+                    { label: "VLamax", value: d.vLamax ? `${d.vLamax}` : null, unit: "mmol/L/s" },
+                  ].filter(m => m.value);
+                  if (metrics.length === 0) return null;
+                  return (
+                    <div className="mt-4 border border-olive/20 rounded-xl overflow-hidden">
+                      <div className="flex items-center gap-2 bg-olive/5 px-4 py-2.5 border-b border-olive/15">
+                        <svg className="w-3.5 h-3.5 text-olive" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17H3a2 2 0 01-2-2V5a2 2 0 012-2h14a2 2 0 012 2v10a2 2 0 01-2 2h-2"/>
+                        </svg>
+                        <span className="text-xs font-semibold text-olive uppercase tracking-wider">AI Extracted Lab Metrics</span>
+                        {d.labName && <span className="text-xs text-earth/60 ml-auto">{d.labName}</span>}
+                      </div>
+                      <div className="p-3 grid grid-cols-3 gap-2">
+                        {metrics.map(m => (
+                          <div key={m.label} className="bg-white rounded-lg p-2.5 text-center border border-stone/20">
+                            <div className="text-[9px] uppercase tracking-wider text-earth mb-1">{m.label}</div>
+                            <div className="text-navy-deep font-bold text-sm">{m.value}</div>
+                            <div className="text-earth/50 text-[9px]">{m.unit}</div>
+                          </div>
+                        ))}
+                      </div>
+                      {d.notes && (
+                        <div className="px-4 pb-3 text-[10px] text-earth/60 italic">{d.notes}</div>
+                      )}
+                      <div className="px-4 pb-2.5 text-[9px] text-earth/40">
+                        These values are for your reference only and do not replace your training data.
+                      </div>
+                    </div>
+                  );
+                })()}
               </Section>
             </div>
 

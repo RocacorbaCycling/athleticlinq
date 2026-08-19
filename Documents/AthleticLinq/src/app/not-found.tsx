@@ -65,6 +65,7 @@ function profileToAthlete(p: AthleteProfile): Athlete {
     sex: p.sex,
     labResultsUrl: p.labResultsUrl,
     labResultsFileName: p.labResultsFileName,
+    labExtractedData: p.labExtractedData,
     followers: 0,
     verified: p.verified,
     palmares: [],
@@ -584,6 +585,49 @@ export default function NotFound() {
                     </svg>
                     Download Lab Results
                   </a>
+
+                  {/* AI-extracted metrics */}
+                  {athlete.labExtractedData && (() => {
+                    const d = athlete.labExtractedData!;
+                    const metrics = [
+                      { label: "VO₂max",    value: d.vo2max,         unit: "ml/kg/min" },
+                      { label: "Lab FTP",   value: d.ftpLab,          unit: "W" },
+                      { label: "LT1",       value: d.ltWatts1,        unit: "W" },
+                      { label: "LT2",       value: d.ltWatts2,        unit: "W" },
+                      { label: "LT1 HR",    value: d.ltHr1,           unit: "bpm" },
+                      { label: "LT2 HR",    value: d.ltHr2,           unit: "bpm" },
+                      { label: "Max HR",    value: d.maxHr,           unit: "bpm" },
+                      { label: "W@VO₂max",  value: d.powerAtVo2max,  unit: "W" },
+                      { label: "VLamax",    value: d.vLamax,          unit: "mmol/L/s" },
+                    ].filter(m => m.value != null);
+                    if (metrics.length === 0) return null;
+                    return (
+                      <div className="mt-4 border border-olive/20 rounded-xl overflow-hidden">
+                        <div className="bg-olive/5 px-3 py-2 border-b border-olive/15 flex items-center gap-2">
+                          <svg className="w-3 h-3 text-olive" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17H3a2 2 0 01-2-2V5a2 2 0 012-2h14a2 2 0 012 2v10a2 2 0 01-2 2h-2"/>
+                          </svg>
+                          <span className="text-[10px] font-bold text-olive uppercase tracking-wider">AI Extracted · Laboratory Measured</span>
+                        </div>
+                        <div className="p-3 grid grid-cols-3 gap-1.5">
+                          {metrics.map(m => (
+                            <div key={m.label} className="bg-cream-warm rounded-lg p-2 text-center">
+                              <div className="text-[8px] uppercase tracking-wider text-earth mb-0.5">{m.label}</div>
+                              <div className="text-navy font-bold text-sm">{m.value}</div>
+                              <div className="text-earth/50 text-[8px]">{m.unit}</div>
+                            </div>
+                          ))}
+                        </div>
+                        {d.notes && (
+                          <p className="px-3 pb-2 text-[9px] text-earth/60 italic leading-relaxed">{d.notes}</p>
+                        )}
+                        <p className="px-3 pb-2.5 text-[9px] text-earth/40">
+                          Lab values shown separately from athlete&apos;s training data above.
+                          {d.testDate && ` Test date: ${d.testDate}.`}
+                        </p>
+                      </div>
+                    );
+                  })()}
                 </div>
               </PowerGate>
             )}
