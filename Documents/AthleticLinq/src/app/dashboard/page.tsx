@@ -334,6 +334,40 @@ function EditModal({
   );
 }
 
+// ── PCS URL inline input ──────────────────────────────────────────────────────
+function PcsUrlInput({ user, onSave }: { user: AthleteProfile; onSave: (url: string) => void }) {
+  const [editing, setEditing] = useState(false);
+  const [val, setVal] = useState(user.procyclingstatsUrl ?? "");
+
+  if (!editing && user.procyclingstatsUrl) return null; // hidden once set; shown via sync row
+
+  return editing ? (
+    <div className="flex gap-2 items-center">
+      <input
+        autoFocus
+        type="url"
+        value={val}
+        onChange={(e) => setVal(e.target.value)}
+        placeholder="https://www.procyclingstats.com/rider/your-name"
+        className="flex-1 text-xs px-3 py-2 border border-stone/40 rounded-xl focus:outline-none focus:border-coral/50"
+      />
+      <button
+        onClick={() => { onSave(val.trim()); setEditing(false); }}
+        disabled={!val.trim()}
+        className="text-xs font-semibold bg-coral text-white px-3 py-2 rounded-full disabled:opacity-40"
+      >Save</button>
+      <button onClick={() => setEditing(false)} className="text-xs text-earth/50 px-2">✕</button>
+    </div>
+  ) : (
+    <button
+      onClick={() => setEditing(true)}
+      className="w-full text-xs text-coral border border-coral/30 hover:bg-coral/5 rounded-xl px-3 py-2 text-left transition-colors"
+    >
+      + Add your ProCyclingStats URL to sync race results
+    </button>
+  );
+}
+
 // ── Dashboard ─────────────────────────────────────────────────────────────────
 export default function Dashboard() {
   const { user, logout, updateProfile, deleteAccount, isLoading } = useAuth();
@@ -1936,11 +1970,10 @@ export default function Dashboard() {
                     </svg>
                   }
                 >
-                  {!user.procyclingstatsUrl ? (
-                    <p className="text-earth/60 text-xs leading-relaxed">
-                      Add your ProCyclingStats URL in your profile to sync race results automatically.
-                    </p>
-                  ) : (
+                  {/* Inline PCS URL input — always visible */}
+                  <PcsUrlInput user={user} onSave={(url) => updateProfile({ procyclingstatsUrl: url })} />
+
+                  {!user.procyclingstatsUrl ? null : (
                     <div className="space-y-3">
                       <div className="flex items-center gap-2 flex-wrap">
                         <a href={user.procyclingstatsUrl} target="_blank" rel="noopener noreferrer"
