@@ -68,7 +68,7 @@ function profileToAthlete(p: AthleteProfile): Athlete {
     labExtractedData: p.labExtractedData,
     followers: 0,
     verified: p.verified,
-    palmares: p.palmares ?? [],
+    palmares: [],
     pcsResults: p.pcsResults ?? [],
     procyclingstatsUrl: p.procyclingstatsUrl,
     tags: [],
