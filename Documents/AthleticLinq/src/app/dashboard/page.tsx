@@ -337,31 +337,23 @@ function EditModal({
 // ── Pro upgrade gate ──────────────────────────────────────────────────────────
 function ProUpgradeGate({ onUpgrade, loading, message }: { onUpgrade: () => void; loading: boolean; message: string }) {
   return (
-    <div className="relative rounded-xl overflow-hidden">
-      <div className="p-4 select-none pointer-events-none" style={{ filter: "blur(4px)" }}>
-        <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-full bg-navy-deep/15 flex items-center justify-center shrink-0">
-            <span className="text-navy-deep/40 text-xs font-bold">SC</span>
-          </div>
-          <div>
-            <p className="text-warm-black text-xs font-semibold">Scout Name</p>
-            <p className="text-earth/60 text-[10px]">Team Manager · Organisation</p>
-          </div>
-        </div>
+    <div className="rounded-2xl border border-coral/20 bg-coral/3 p-5 flex flex-col items-center text-center gap-3">
+      <div className="w-10 h-10 rounded-full bg-coral/10 flex items-center justify-center">
+        <svg className="w-5 h-5 text-coral" fill="currentColor" viewBox="0 0 24 24">
+          <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+        </svg>
       </div>
-      <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-white/85 backdrop-blur-[1px]">
-        <div className="flex items-center gap-1.5">
-          <svg className="w-3.5 h-3.5 text-coral" fill="currentColor" viewBox="0 0 24 24">
-            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
-          </svg>
-          <span className="text-xs font-bold text-coral">Pro feature</span>
-        </div>
-        <p className="text-earth/70 text-[10px] text-center px-4">{message}</p>
-        <button onClick={onUpgrade} disabled={loading}
-          className="text-[10px] font-semibold text-white bg-coral hover:bg-coral/90 px-4 py-1.5 rounded-full transition-colors disabled:opacity-50">
-          {loading ? "Loading…" : "Upgrade to Pro — €3.99/mo"}
-        </button>
+      <div>
+        <p className="text-xs font-bold text-coral mb-0.5">Pro feature</p>
+        <p className="text-earth/60 text-xs leading-relaxed">{message}</p>
       </div>
+      <button
+        onClick={onUpgrade}
+        disabled={loading}
+        className="w-full bg-coral hover:bg-coral/90 text-white text-xs font-semibold py-2.5 rounded-full transition-colors disabled:opacity-50"
+      >
+        {loading ? "Loading…" : "Upgrade to Pro — €3.99/mo"}
+      </button>
     </div>
   );
 }
