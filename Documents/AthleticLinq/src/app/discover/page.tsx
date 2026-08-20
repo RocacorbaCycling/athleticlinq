@@ -14,9 +14,9 @@ type SortOption = "score" | "ftp" | "wpkg" | "age";
 const USERS_KEY = "athleticlinq_users";
 const PREVIEW_COUNT = 4; // guests see this many athletes before lock
 
-// ── Continent mapping ─────────────────────────────────────────────────────────
+// ── Continent mapping — demonyms AND country names ────────────────────────────
 const CONTINENT_MAP: Record<string, string> = {
-  // Africa
+  // Africa — demonyms
   algerian: "Africa", angolan: "Africa", beninese: "Africa", botswanan: "Africa",
   burkinabe: "Africa", burundian: "Africa", cameroonian: "Africa", "cape verdean": "Africa",
   chadian: "Africa", comorian: "Africa", congolese: "Africa", djiboutian: "Africa",
@@ -30,49 +30,104 @@ const CONTINENT_MAP: Record<string, string> = {
   "south sudanese": "Africa", sudanese: "Africa", swazi: "Africa", tanzanian: "Africa",
   togolese: "Africa", tunisian: "Africa", ugandan: "Africa", zambian: "Africa",
   zimbabwean: "Africa",
-  // South America
+  // Africa — country names
+  algeria: "Africa", angola: "Africa", benin: "Africa", botswana: "Africa",
+  "burkina faso": "Africa", burundi: "Africa", cameroon: "Africa", "cape verde": "Africa",
+  chad: "Africa", comoros: "Africa", congo: "Africa", djibouti: "Africa",
+  egypt: "Africa", eritrea: "Africa", ethiopia: "Africa", gabon: "Africa",
+  gambia: "Africa", ghana: "Africa", guinea: "Africa", kenya: "Africa",
+  lesotho: "Africa", liberia: "Africa", libya: "Africa", madagascar: "Africa",
+  malawi: "Africa", mali: "Africa", mauritania: "Africa", mauritius: "Africa",
+  morocco: "Africa", mozambique: "Africa", namibia: "Africa", niger: "Africa",
+  nigeria: "Africa", rwanda: "Africa", senegal: "Africa", "sierra leone": "Africa",
+  somalia: "Africa", "south africa": "Africa", "south sudan": "Africa", sudan: "Africa",
+  eswatini: "Africa", swaziland: "Africa", tanzania: "Africa", togo: "Africa",
+  tunisia: "Africa", uganda: "Africa", zambia: "Africa", zimbabwe: "Africa",
+  "ivory coast": "Africa", "côte d'ivoire": "Africa",
+  // South America — demonyms
   argentine: "South America", argentinian: "South America", bolivian: "South America",
   brazilian: "South America", chilean: "South America", colombian: "South America",
   ecuadorian: "South America", guyanese: "South America", paraguayan: "South America",
   peruvian: "South America", surinamese: "South America", uruguayan: "South America",
   venezuelan: "South America",
-  // North America / Central America / Caribbean
+  // South America — country names
+  argentina: "South America", bolivia: "South America", brazil: "South America",
+  chile: "South America", colombia: "South America", ecuador: "South America",
+  guyana: "South America", paraguay: "South America", peru: "South America",
+  suriname: "South America", uruguay: "South America", venezuela: "South America",
+  // North / Central America / Caribbean — demonyms
   american: "North America", canadian: "North America", mexican: "North America",
   guatemalan: "North America", belizean: "North America", honduran: "North America",
   salvadoran: "North America", nicaraguan: "North America", "costa rican": "North America",
   panamanian: "North America", cuban: "North America", dominican: "North America",
   haitian: "North America", jamaican: "North America", "puerto rican": "North America",
-  "trinidad and tobago": "North America",
-  // Europe
+  trinidadian: "North America",
+  // North / Central America / Caribbean — country names
+  "united states": "North America", usa: "North America", canada: "North America",
+  mexico: "North America", guatemala: "North America", belize: "North America",
+  honduras: "North America", "el salvador": "North America", nicaragua: "North America",
+  "costa rica": "North America", panama: "North America", cuba: "North America",
+  "dominican republic": "North America", haiti: "North America", jamaica: "North America",
+  "trinidad and tobago": "North America", "puerto rico": "North America",
+  // Europe — demonyms
   albanian: "Europe", andorran: "Europe", armenian: "Europe", austrian: "Europe",
-  azerbaijani: "Europe", belarusian: "Europe", belgian: "Europe", "bosnian": "Europe",
+  azerbaijani: "Europe", belarusian: "Europe", belgian: "Europe", bosnian: "Europe",
   bulgarian: "Europe", croatian: "Europe", cypriot: "Europe", czech: "Europe",
   danish: "Europe", dutch: "Europe", estonian: "Europe", finnish: "Europe",
   french: "Europe", georgian: "Europe", german: "Europe", greek: "Europe",
   hungarian: "Europe", icelandic: "Europe", irish: "Europe", italian: "Europe",
-  kazakh: "Europe", kosovar: "Europe", latvian: "Europe", liechtenstein: "Europe",
-  lithuanian: "Europe", luxembourgish: "Europe", macedonian: "Europe", maltese: "Europe",
-  moldovan: "Europe", monacan: "Europe", montenegrin: "Europe", norwegian: "Europe",
-  polish: "Europe", portuguese: "Europe", romanian: "Europe", russian: "Europe",
-  "san marinese": "Europe", serbian: "Europe", slovak: "Europe", slovenian: "Europe",
-  spanish: "Europe", swedish: "Europe", swiss: "Europe", turkish: "Europe",
-  ukrainian: "Europe", british: "Europe", english: "Europe", scottish: "Europe",
-  welsh: "Europe", "northern irish": "Europe",
-  // Asia
+  kazakh: "Europe", kosovar: "Europe", latvian: "Europe", lithuanian: "Europe",
+  luxembourgish: "Europe", macedonian: "Europe", maltese: "Europe", moldovan: "Europe",
+  monacan: "Europe", montenegrin: "Europe", norwegian: "Europe", polish: "Europe",
+  portuguese: "Europe", romanian: "Europe", russian: "Europe", serbian: "Europe",
+  slovak: "Europe", slovenian: "Europe", spanish: "Europe", swedish: "Europe",
+  swiss: "Europe", turkish: "Europe", ukrainian: "Europe", british: "Europe",
+  english: "Europe", scottish: "Europe", welsh: "Europe", "northern irish": "Europe",
+  // Europe — country names
+  albania: "Europe", andorra: "Europe", armenia: "Europe", austria: "Europe",
+  azerbaijan: "Europe", belarus: "Europe", belgium: "Europe", "bosnia and herzegovina": "Europe",
+  bulgaria: "Europe", croatia: "Europe", cyprus: "Europe", "czech republic": "Europe",
+  czechia: "Europe", denmark: "Europe", "netherlands": "Europe", estonia: "Europe",
+  finland: "Europe", france: "Europe", georgia: "Europe", germany: "Europe",
+  greece: "Europe", hungary: "Europe", iceland: "Europe", ireland: "Europe",
+  italy: "Europe", kosovo: "Europe", latvia: "Europe", liechtenstein: "Europe",
+  lithuania: "Europe", luxembourg: "Europe", "north macedonia": "Europe", malta: "Europe",
+  moldova: "Europe", monaco: "Europe", montenegro: "Europe", norway: "Europe",
+  poland: "Europe", portugal: "Europe", romania: "Europe", russia: "Europe",
+  "san marino": "Europe", serbia: "Europe", slovakia: "Europe", slovenia: "Europe",
+  spain: "Europe", sweden: "Europe", switzerland: "Europe", turkey: "Europe",
+  ukraine: "Europe", "united kingdom": "Europe", uk: "Europe", england: "Europe",
+  scotland: "Europe", wales: "Europe",
+  // Asia — demonyms
   afghan: "Asia", bahraini: "Asia", bangladeshi: "Asia", bhutanese: "Asia",
   bruneian: "Asia", burmese: "Asia", cambodian: "Asia", chinese: "Asia",
   emirati: "Asia", filipino: "Asia", indian: "Asia", indonesian: "Asia",
   iranian: "Asia", iraqi: "Asia", israeli: "Asia", japanese: "Asia",
   jordanian: "Asia", kuwaiti: "Asia", kyrgyz: "Asia", laotian: "Asia",
   lebanese: "Asia", malaysian: "Asia", maldivian: "Asia", mongolian: "Asia",
-  nepalese: "Asia", "north korean": "Asia", omani: "Asia", pakistani: "Asia",
+  nepalese: "Asia", nepali: "Asia", omani: "Asia", pakistani: "Asia",
   palestinian: "Asia", qatari: "Asia", saudi: "Asia", singaporean: "Asia",
   "south korean": "Asia", "sri lankan": "Asia", syrian: "Asia", taiwanese: "Asia",
   tajik: "Asia", thai: "Asia", timorese: "Asia", turkmen: "Asia",
   uzbek: "Asia", vietnamese: "Asia", yemeni: "Asia",
-  // Oceania
+  // Asia — country names
+  afghanistan: "Asia", bahrain: "Asia", bangladesh: "Asia", bhutan: "Asia",
+  brunei: "Asia", myanmar: "Asia", cambodia: "Asia", china: "Asia",
+  "united arab emirates": "Asia", uae: "Asia", philippines: "Asia", india: "Asia",
+  indonesia: "Asia", iran: "Asia", iraq: "Asia", israel: "Asia", japan: "Asia",
+  jordan: "Asia", kuwait: "Asia", kyrgyzstan: "Asia", laos: "Asia",
+  lebanon: "Asia", malaysia: "Asia", maldives: "Asia", mongolia: "Asia",
+  nepal: "Asia", oman: "Asia", pakistan: "Asia", palestine: "Asia",
+  qatar: "Asia", "saudi arabia": "Asia", singapore: "Asia", "south korea": "Asia",
+  "sri lanka": "Asia", syria: "Asia", taiwan: "Asia", tajikistan: "Asia",
+  thailand: "Asia", "timor-leste": "Asia", turkmenistan: "Asia",
+  uzbekistan: "Asia", vietnam: "Asia", yemen: "Asia",
+  // Oceania — demonyms
   australian: "Oceania", "new zealander": "Oceania", fijian: "Oceania",
-  "papua new guinean": "Oceania", samoan: "Oceania", tongan: "Oceania",
+  samoan: "Oceania", tongan: "Oceania",
+  // Oceania — country names
+  australia: "Oceania", "new zealand": "Oceania", fiji: "Oceania",
+  "papua new guinea": "Oceania", samoa: "Oceania", tonga: "Oceania",
 };
 
 const CONTINENTS = ["all", "Africa", "Asia", "Europe", "North America", "South America", "Oceania"] as const;
