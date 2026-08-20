@@ -9,6 +9,7 @@ import CompoundScore from "@/components/CompoundScore";
 import PowerStats from "@/components/PowerStats";
 import PowerGate from "@/components/PowerGate";
 import AthleteProfileActions from "@/components/AthleteProfileActions";
+import FireButton from "@/components/FireButton";
 import VideoPlayer from "@/components/VideoPlayer";
 import { buildPowerCurve } from "@/lib/powerCurve";
 
@@ -320,6 +321,7 @@ export default function NotFound() {
               <p className="text-white/60 text-sm leading-relaxed mt-6 max-w-2xl">{athlete.bio}</p>
 
               <div className="flex flex-wrap gap-3 mt-6">
+                <FireButton toAthleteId={athlete.id} variant="profile" />
                 <AthleteProfileActions
                   athleteId={athlete.id}
                   athleteFirstName={athlete.firstName}

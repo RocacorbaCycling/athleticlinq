@@ -2,6 +2,7 @@ import type { Athlete } from "@/data/athletes";
 import { getUCILevel } from "@/data/athletes";
 import CompoundScore from "./CompoundScore";
 import FavouriteButton from "./FavouriteButton";
+import FireButton from "./FireButton";
 
 interface AthleteCardProps {
   athlete: Athlete;
@@ -54,7 +55,7 @@ export default function AthleteCard({ athlete, showPower = false }: AthleteCardP
             )}
           </div>
 
-          {/* Age badge + favourite star */}
+          {/* Age badge + action button (star for scouts, fire for athletes) */}
           <div className="absolute top-3 right-3 flex items-center gap-1.5">
             <span className="bg-olive/80 backdrop-blur-sm text-white text-xs font-medium px-2.5 py-1 rounded-full">
               Age {athlete.age}
@@ -65,6 +66,7 @@ export default function AthleteCard({ athlete, showPower = false }: AthleteCardP
               athleteLastName={athlete.lastName}
               variant="card"
             />
+            <FireButton toAthleteId={athlete.id} variant="card" />
           </div>
 
           {/* Bottom name strip */}
