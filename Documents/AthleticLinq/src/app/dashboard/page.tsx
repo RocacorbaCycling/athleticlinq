@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { useAuth, AthleteProfile, isScout, isAthlete, isParent } from "@/context/AuthContext";
+import { useAuth, AthleteProfile, ScoutProfile, ParentProfile, isScout, isAthlete, isParent } from "@/context/AuthContext";
 import { calculateCompoundScore } from "@/data/athletes";
 import { supabase } from "@/lib/supabase";
 import CompoundScore from "@/components/CompoundScore";
@@ -334,7 +334,37 @@ function EditModal({
   );
 }
 
-// ── PCS URL inline input ──────────────────────────────────────────────────────
+// ── Pro upgrade gate ──────────────────────────────────────────────────────────
+function ProUpgradeGate({ onUpgrade, loading, message }: { onUpgrade: () => void; loading: boolean; message: string }) {
+  return (
+    <div className="relative rounded-xl overflow-hidden">
+      <div className="p-4 select-none pointer-events-none" style={{ filter: "blur(4px)" }}>
+        <div className="flex items-center gap-2.5">
+          <div className="w-8 h-8 rounded-full bg-navy-deep/15 flex items-center justify-center shrink-0">
+            <span className="text-navy-deep/40 text-xs font-bold">SC</span>
+          </div>
+          <div>
+            <p className="text-warm-black text-xs font-semibold">Scout Name</p>
+            <p className="text-earth/60 text-[10px]">Team Manager · Organisation</p>
+          </div>
+        </div>
+      </div>
+      <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-white/85 backdrop-blur-[1px]">
+        <div className="flex items-center gap-1.5">
+          <svg className="w-3.5 h-3.5 text-coral" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+          </svg>
+          <span className="text-xs font-bold text-coral">Pro feature</span>
+        </div>
+        <p className="text-earth/70 text-[10px] text-center px-4">{message}</p>
+        <button onClick={onUpgrade} disabled={loading}
+          className="text-[10px] font-semibold text-white bg-coral hover:bg-coral/90 px-4 py-1.5 rounded-full transition-colors disabled:opacity-50">
+          {loading ? "Loading…" : "Upgrade to Pro — €3.99/mo"}
+        </button>
+      </div>
+    </div>
+  );
+}
 
 // ── Dashboard ─────────────────────────────────────────────────────────────────
 export default function Dashboard() {
@@ -643,8 +673,89 @@ export default function Dashboard() {
     router.push("/");
   };
 
+  // ── Pro / Stripe helpers ───────────────────────────────────────────────────
+  const isPro = !!(user as AthleteProfile | ScoutProfile | ParentProfile).pro;
+  const subStatus = (user as AthleteProfile | ScoutProfile | ParentProfile).subscriptionStatus ?? "free";
+  const stripeCustomerId = (user as AthleteProfile | ScoutProfile | ParentProfile).stripeCustomerId;
+
+  const [checkingOut, setCheckingOut] = useState(false);
+  const [paymentSuccess] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return new URLSearchParams(window.location.search).get("payment") === "success";
+  });
+
+  async function handleUpgrade() {
+    if (!user) return;
+    setCheckingOut(true);
+    try {
+      const res = await fetch("/.netlify/functions/create-checkout-session", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: user.id, userType: user.type ?? "athlete", email: (user as AthleteProfile).email }),
+      });
+      const { url, error } = await res.json();
+      if (error || !url) { alert("Could not start checkout — please try again."); return; }
+      window.location.href = url;
+    } catch { alert("Could not start checkout — please try again."); }
+    finally { setCheckingOut(false); }
+  }
+
+  async function handleManageSubscription() {
+    if (!stripeCustomerId) return;
+    setCheckingOut(true);
+    try {
+      const res = await fetch("/.netlify/functions/create-portal-session", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ stripeCustomerId }),
+      });
+      const { url, error } = await res.json();
+      if (error || !url) { alert("Could not open billing portal — please try again."); return; }
+      window.location.href = url;
+    } catch { alert("Could not open billing portal — please try again."); }
+    finally { setCheckingOut(false); }
+  }
+
   // ── Scout view ──────────────────────────────────────────────────────────────
   if (isScout(user)) {
+    // Scouts must be Pro (or trialing) to access the platform
+    if (!isPro) {
+      return (
+        <div className="min-h-screen bg-cream flex items-center justify-center p-6">
+          <div className="bg-white rounded-3xl shadow-xl max-w-sm w-full p-8 text-center">
+            <div className="w-14 h-14 rounded-full bg-coral/10 flex items-center justify-center mx-auto mb-4">
+              <svg className="w-7 h-7 text-coral" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+              </svg>
+            </div>
+            <h1 className="font-display text-2xl text-navy-deep mb-2">Scout Pro</h1>
+            <p className="text-earth text-sm leading-relaxed mb-6">
+              Start your <strong>7-day free trial</strong> to access athlete profiles, power data, lab results, and messaging. Cancel any time.
+            </p>
+            <div className="bg-cream-warm rounded-2xl p-4 mb-6 text-left space-y-2">
+              {["Full access to all athlete profiles", "Power data & lab results", "Contact & message athletes", "Favourites & shortlists", "Palmarès & race history"].map((f) => (
+                <div key={f} className="flex items-center gap-2 text-sm text-navy-deep">
+                  <svg className="w-4 h-4 text-coral shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                  </svg>
+                  {f}
+                </div>
+              ))}
+            </div>
+            <button onClick={handleUpgrade} disabled={checkingOut}
+              className="w-full bg-coral hover:bg-coral/90 text-white font-semibold py-3 rounded-full transition-colors disabled:opacity-50 text-sm">
+              {checkingOut ? "Loading…" : "Start 7-day free trial — €9.99/mo"}
+            </button>
+            <p className="text-earth/40 text-xs mt-3">No charge until your trial ends · Cancel any time</p>
+            <button onClick={() => { logout(); router.push("/login"); }}
+              className="mt-4 text-xs text-earth/40 hover:text-earth underline">
+              Sign out
+            </button>
+          </div>
+        </div>
+      );
+    }
+
     return (
       <>
       {showDeleteConfirm && (
@@ -1542,6 +1653,16 @@ export default function Dashboard() {
         </div>
       )}
 
+      {/* Payment success banner */}
+      {paymentSuccess && (
+        <div className="fixed top-20 left-1/2 -translate-x-1/2 z-50 bg-coral text-white text-sm font-semibold px-5 py-2.5 rounded-full shadow-lg flex items-center gap-2 pointer-events-none">
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+          </svg>
+          Welcome to Pro! Your account is now unlocked.
+        </div>
+      )}
+
       {/* Strava notification banner */}
       {stravaMsg && (
         <div className={`fixed top-20 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 px-5 py-2.5 rounded-full shadow-lg text-sm font-semibold pointer-events-none ${
@@ -2146,7 +2267,37 @@ export default function Dashboard() {
             {/* ── Right column (sidebar) ── */}
             <div className="space-y-6">
 
-              {/* Scout Favourites Notifications */}
+              {/* Pro status / upgrade card */}
+              {!isScout(user) && (
+                isPro ? (
+                  <div className="bg-coral/5 border border-coral/20 rounded-2xl p-4 flex items-center gap-3">
+                    <svg className="w-5 h-5 text-coral shrink-0" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                    </svg>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-bold text-coral">Pro Active</p>
+                      <p className="text-[10px] text-earth/50">{subStatus === "trialing" ? "Free trial" : "Monthly subscription"}</p>
+                    </div>
+                    {stripeCustomerId && (
+                      <button onClick={handleManageSubscription} disabled={checkingOut}
+                        className="text-[10px] text-coral hover:underline shrink-0 font-medium disabled:opacity-50">
+                        Manage
+                      </button>
+                    )}
+                  </div>
+                ) : (
+                  <div className="bg-white border border-stone/30 rounded-2xl p-4">
+                    <p className="text-xs font-bold text-navy-deep mb-1">Upgrade to Pro</p>
+                    <p className="text-[10px] text-earth/60 mb-3">See who views and favourites your profile. Get a verified badge.</p>
+                    <button onClick={handleUpgrade} disabled={checkingOut}
+                      className="w-full bg-coral hover:bg-coral/90 text-white text-xs font-semibold py-2 rounded-full transition-colors disabled:opacity-50">
+                      {checkingOut ? "Loading…" : "€3.99 / month"}
+                    </button>
+                  </div>
+                )
+              )}
+
+              {/* Scout Favourites Notifications — Pro only */}
               {!isScout(user) && (
                 <Section
                   title="Scouts Interested"
@@ -2156,7 +2307,10 @@ export default function Dashboard() {
                     </svg>
                   }
                 >
-                  {favNotifications.length === 0 ? (
+                  {!isPro ? (
+                    <ProUpgradeGate onUpgrade={handleUpgrade} loading={checkingOut}
+                      message="See which scouts have starred your profile" />
+                  ) : favNotifications.length === 0 ? (
                     <div className="text-center py-2">
                       <p className="text-earth/60 text-sm">No favourites yet</p>
                       <p className="text-earth/40 text-xs mt-1">Scouts who star your profile will appear here</p>
@@ -2390,7 +2544,10 @@ export default function Dashboard() {
                     </svg>
                   }
                 >
-                  {scoutViewCount === null ? (
+                  {!isPro ? (
+                    <ProUpgradeGate onUpgrade={handleUpgrade} loading={checkingOut}
+                      message="See exactly which scouts viewed your profile" />
+                  ) : scoutViewCount === null ? (
                     <p className="text-earth/50 text-xs text-center py-2">Loading…</p>
                   ) : scoutViewCount === 0 ? (
                     <div className="text-center py-2">
@@ -2398,52 +2555,24 @@ export default function Dashboard() {
                       <p className="text-earth/40 text-xs mt-1">Scouts who view your profile will appear here</p>
                     </div>
                   ) : (
-                    <div className="space-y-3">
-                      {/* Free: view count */}
-                      <div className="flex items-center gap-3 bg-olive/8 rounded-xl p-3 border border-olive/15">
-                        <div className="w-10 h-10 rounded-full bg-olive/15 flex items-center justify-center shrink-0">
-                          <span className="font-bold text-olive text-base">{scoutViewCount}</span>
-                        </div>
-                        <div>
-                          <p className="text-warm-black text-sm font-semibold">
-                            {scoutViewCount} scout{scoutViewCount !== 1 ? "s" : ""} viewed your profile
-                          </p>
-                          <p className="text-earth/50 text-xs">
-                            Last viewed: {new Date(scoutViewList[0]?.last_viewed_at).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}
-                          </p>
-                        </div>
-                      </div>
-
-                      {/* Pro gate: show who specifically */}
-                      <div className="relative">
-                        {/* Blurred preview of first scout */}
-                        <div className="rounded-xl border border-stone/20 p-3 select-none pointer-events-none" style={{ filter: "blur(5px)" }}>
-                          <div className="flex items-center gap-2.5">
-                            <div className="w-8 h-8 rounded-full bg-navy-deep/20 flex items-center justify-center shrink-0">
-                              <span className="text-navy-deep/60 text-xs font-bold">SC</span>
-                            </div>
-                            <div>
-                              <p className="text-warm-black text-xs font-semibold">Scout Name</p>
-                              <p className="text-earth/60 text-[10px]">Team Manager · ProTeam</p>
-                            </div>
+                    <ul className="space-y-2">
+                      {scoutViewList.map((v, i) => (
+                        <li key={i} className="flex items-center gap-2.5 text-xs">
+                          <div className="w-8 h-8 rounded-full bg-olive/15 flex items-center justify-center shrink-0">
+                            <span className="text-olive font-bold text-[10px]">
+                              {(v.scout_first_name?.[0] ?? "") + (v.scout_last_name?.[0] ?? "")}
+                            </span>
                           </div>
-                        </div>
-                        {/* Upgrade overlay */}
-                        <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-white/80 backdrop-blur-[1px] rounded-xl">
-                          <div className="flex items-center gap-1.5">
-                            <svg className="w-3.5 h-3.5 text-coral" fill="currentColor" viewBox="0 0 24 24">
-                              <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
-                            </svg>
-                            <span className="text-xs font-bold text-coral">Pro feature</span>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-navy-deep font-medium truncate">{v.scout_first_name} {v.scout_last_name}</p>
+                            <p className="text-earth/50 text-[10px]">{v.scout_role} · {v.scout_organization}</p>
                           </div>
-                          <p className="text-earth/70 text-[10px] text-center px-2">See exactly which scouts viewed your profile</p>
-                          <a href="mailto:hello@athleticlinq.com?subject=AthleticLinq Pro"
-                            className="text-[10px] font-semibold text-white bg-coral hover:bg-coral/90 px-3 py-1.5 rounded-full transition-colors">
-                            Upgrade to Pro
-                          </a>
-                        </div>
-                      </div>
-                    </div>
+                          <p className="text-earth/30 text-[10px] shrink-0">
+                            {new Date(v.last_viewed_at).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}
+                          </p>
+                        </li>
+                      ))}
+                    </ul>
                   )}
                 </Section>
               )}

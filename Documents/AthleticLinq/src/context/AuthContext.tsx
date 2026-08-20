@@ -58,6 +58,10 @@ export interface AthleteProfile {
   stravaTotalSufferScore?: number;
   instagramUrl?: string;
   procyclingstatsUrl?: string;
+  // Subscription
+  pro?: boolean;
+  subscriptionStatus?: string; // "active" | "trialing" | "cancelled" | "free"
+  stripeCustomerId?: string;
   pcsResults?: Array<{ year: string; race: string; position: number; category: string; raceUrl: string }>;
   pcsLastSync?: string;
   // Lab results
@@ -93,6 +97,10 @@ export interface ScoutProfile {
   phone?: string;
   linkedIn?: string;
   verified: boolean;
+  // Subscription
+  pro?: boolean;
+  subscriptionStatus?: string;
+  stripeCustomerId?: string;
 }
 
 // ── Parent / Guardian ────────────────────────────────────────────────────────
@@ -104,9 +112,12 @@ export interface ParentProfile {
   lastName: string;
   email: string;
   password: string;
-  linkedAthleteId?: string;   // athlete this parent manages
+  linkedAthleteId?: string;
   linkedAthleteEmail?: string;
   verified: boolean;
+  pro?: boolean;
+  subscriptionStatus?: string;
+  stripeCustomerId?: string;
 }
 
 export type ActiveUser = AthleteProfile | ScoutProfile | ParentProfile;
