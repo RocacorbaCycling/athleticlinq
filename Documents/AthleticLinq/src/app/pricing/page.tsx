@@ -12,13 +12,6 @@ function CheckIcon({ className = "w-4 h-4" }: { className?: string }) {
   );
 }
 
-function CrossIcon() {
-  return (
-    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-    </svg>
-  );
-}
 
 const athleteFeatures = [
   { text: "Full performance profile (FTP, W/kg, compound score)", free: true, pro: true },
@@ -34,16 +27,13 @@ const athleteFeatures = [
 ];
 
 const scoutFeatures = [
-  { text: "Full power data & compound scores", pro: true, team: true, agency: true },
-  { text: "Contact athletes directly", pro: true, team: true, agency: true },
-  { text: "Athlete shortlists", pro: true, team: true, agency: true },
-  { text: "Advanced filters (W/kg, age, region, discipline)", pro: true, team: true, agency: true },
-  { text: "Seats", pro: "1 seat", team: "5 seats", agency: "Unlimited" },
-  { text: "Export talent pool as CSV", pro: false, team: true, agency: true },
-  { text: "Branded scout profile visible to athletes", pro: false, team: true, agency: true },
-  { text: "Multi-sport talent pipeline reports", pro: false, team: false, agency: true },
-  { text: "National federation / white-label licence", pro: false, team: false, agency: true },
-  { text: "Dedicated account manager", pro: false, team: false, agency: true },
+  "Full power data & compound scores",
+  "Contact athletes directly",
+  "Athlete shortlists",
+  "Advanced filters (W/kg, age, region, discipline)",
+  "Profile videos & Strava training data",
+  "Lab result access",
+  "7-day free trial — no credit card required",
 ];
 
 const faqs = [
@@ -62,10 +52,6 @@ const faqs = [
   {
     q: "Is there a free trial for scouts?",
     a: "Yes — every new scout account starts with a 7-day free trial, no credit card required. You get full access to all Scout Pro features from the moment you sign up.",
-  },
-  {
-    q: "Can a national federation use AthleticLinq?",
-    a: "Yes — the Agency & Federation tier is designed for governing bodies, multi-nation academies, and large management companies. This includes custom onboarding, data export, talent pipeline reporting, and optional white-labelling. Contact us to discuss.",
   },
   {
     q: "Can I cancel my subscription at any time?",
@@ -223,97 +209,29 @@ export default function PricingPage() {
             </div>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-6">
+          <div className="max-w-md mx-auto">
             {/* Scout Pro */}
-            <div className="bg-white rounded-2xl border-2 border-coral/20 shadow-sm p-7 relative">
-              <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                <span className="bg-coral text-white text-[10px] font-bold uppercase tracking-widest px-4 py-1.5 rounded-full shadow">
-                  Most popular
-                </span>
-              </div>
-              <div className="mb-6 pt-3">
+            <div className="bg-white rounded-2xl border-2 border-coral/20 shadow-sm p-8 relative">
+              <div className="mb-6">
                 <div className="text-xs uppercase tracking-widest text-earth/60 font-semibold mb-2">Scout Pro</div>
                 <div className="flex items-end gap-2 mb-1">
-                  <span className="font-display text-4xl text-navy-deep">€9.99</span>
-                  <span className="text-earth/60 text-sm mb-1">/month</span>
+                  <span className="font-display text-5xl text-navy-deep">€9.99</span>
+                  <span className="text-earth/60 text-sm mb-2">/month</span>
                 </div>
-                <div className="text-earth/50 text-xs">Individual scout or talent manager · 7-day free trial</div>
+                <div className="text-earth/50 text-sm">Individual scout or talent manager</div>
               </div>
-              <ul className="space-y-2.5 mb-8 text-sm">
-                {scoutFeatures.map((f) => {
-                  const val = f.pro;
-                  const isString = typeof val === "string";
-                  return (
-                    <li key={f.text} className={`flex items-start gap-2.5 ${val ? "text-warm-black" : "text-earth/30 line-through"}`}>
-                      <span className={`shrink-0 mt-0.5 ${val ? "text-coral" : "text-stone/30"}`}>
-                        {val ? <CheckIcon /> : <CrossIcon />}
-                      </span>
-                      <span>{isString ? `${f.text}: ${val}` : f.text}</span>
-                    </li>
-                  );
-                })}
+              <ul className="space-y-3 mb-8">
+                {scoutFeatures.map((f) => (
+                  <li key={f} className="flex items-start gap-3 text-sm text-warm-black">
+                    <span className="shrink-0 mt-0.5 text-coral"><CheckIcon /></span>
+                    {f}
+                  </li>
+                ))}
               </ul>
               <Link href="/signup/scout"
                 className="block w-full text-center bg-coral hover:bg-coral/90 text-white font-semibold py-3 rounded-full transition-colors text-sm">
-                Apply as Scout
+                Start Free Trial
               </Link>
-            </div>
-
-            {/* Team */}
-            <div className="bg-navy-deep rounded-2xl shadow-lg p-7">
-              <div className="mb-6">
-                <div className="text-xs uppercase tracking-widest text-white/50 font-semibold mb-2">Team Manager</div>
-                <div className="flex items-end gap-2 mb-1">
-                  <span className="font-display text-4xl text-white">£99</span>
-                  <span className="text-white/50 text-sm mb-1">/month</span>
-                </div>
-                <div className="text-white/40 text-xs">Continental to WorldTour teams</div>
-              </div>
-              <ul className="space-y-2.5 mb-8 text-sm">
-                {scoutFeatures.map((f) => {
-                  const val = f.team;
-                  const isString = typeof val === "string";
-                  return (
-                    <li key={f.text} className={`flex items-start gap-2.5 ${val ? "text-white" : "text-white/25 line-through"}`}>
-                      <span className={`shrink-0 mt-0.5 ${val ? "text-olive" : "text-white/20"}`}>
-                        {val ? <CheckIcon /> : <CrossIcon />}
-                      </span>
-                      <span>{isString ? `${f.text}: ${val}` : f.text}</span>
-                    </li>
-                  );
-                })}
-              </ul>
-              <a href="mailto:hello@athleticlinq.com?subject=AthleticLinq Team Plan"
-                className="block w-full text-center bg-white/10 hover:bg-white/20 border border-white/20 text-white font-semibold py-3 rounded-full transition-colors text-sm">
-                Contact Us
-              </a>
-            </div>
-
-            {/* Agency */}
-            <div className="bg-white rounded-2xl border border-stone/30 shadow-sm p-7">
-              <div className="mb-6">
-                <div className="text-xs uppercase tracking-widest text-earth/60 font-semibold mb-2">Agency &amp; Federation</div>
-                <div className="font-display text-4xl text-navy-deep mb-1">Custom</div>
-                <div className="text-earth/50 text-xs">Federations, agencies &amp; large organisations</div>
-              </div>
-              <ul className="space-y-2.5 mb-8 text-sm">
-                {scoutFeatures.map((f) => {
-                  const val = f.agency;
-                  const isString = typeof val === "string";
-                  return (
-                    <li key={f.text} className={`flex items-start gap-2.5 ${val ? "text-warm-black" : "text-earth/30 line-through"}`}>
-                      <span className={`shrink-0 mt-0.5 ${val ? "text-navy-deep" : "text-stone/30"}`}>
-                        {val ? <CheckIcon /> : <CrossIcon />}
-                      </span>
-                      <span>{isString ? `${f.text}: ${val}` : f.text}</span>
-                    </li>
-                  );
-                })}
-              </ul>
-              <a href="mailto:hello@athleticlinq.com?subject=AthleticLinq Agency%2FFederation"
-                className="block w-full text-center bg-navy-deep hover:bg-navy-deep/90 text-white font-semibold py-3 rounded-full transition-colors text-sm">
-                Get in Touch
-              </a>
             </div>
           </div>
         </section>
