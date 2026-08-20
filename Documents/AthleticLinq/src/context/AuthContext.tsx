@@ -99,8 +99,9 @@ export interface ScoutProfile {
   verified: boolean;
   // Subscription
   pro?: boolean;
-  subscriptionStatus?: string;
+  subscriptionStatus?: string; // "trialing" | "active" | "cancelled" | "free"
   stripeCustomerId?: string;
+  trialEndsAt?: string; // ISO date — set on signup, no card required
 }
 
 // ── Parent / Guardian ────────────────────────────────────────────────────────
@@ -313,12 +314,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const registerScout = useCallback(async (
     profile: Omit<ScoutProfile, "id" | "createdAt" | "verified" | "type">
   ) => {
+    const trialEndsAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
     const newScout: ScoutProfile = {
       ...profile,
       type: "scout",
       id: `scout_${Date.now()}`,
       createdAt: new Date().toISOString(),
-      verified: false,
+      verified: true,
+      pro: true,
+      subscriptionStatus: "trialing",
+      trialEndsAt,
     };
 
     if (supabase) {

@@ -671,9 +671,15 @@ export default function Dashboard() {
   };
 
   // ── Pro / Stripe helpers ───────────────────────────────────────────────────
-  const isPro = !!(user as AthleteProfile | ScoutProfile | ParentProfile).pro;
   const subStatus = (user as AthleteProfile | ScoutProfile | ParentProfile).subscriptionStatus ?? "free";
   const stripeCustomerId = (user as AthleteProfile | ScoutProfile | ParentProfile).stripeCustomerId;
+  const trialEndsAt = isScout(user) ? (user as ScoutProfile).trialEndsAt : undefined;
+  const trialExpired = trialEndsAt ? new Date(trialEndsAt) < new Date() : false;
+  const daysLeftInTrial = trialEndsAt && !trialExpired
+    ? Math.max(1, Math.ceil((new Date(trialEndsAt).getTime() - Date.now()) / (1000 * 60 * 60 * 24)))
+    : 0;
+  const isPro = !!(user as AthleteProfile | ScoutProfile | ParentProfile).pro
+    && (subStatus === "active" || (subStatus === "trialing" && !trialExpired));
 
   async function handleUpgrade() {
     if (!user) return;
@@ -719,9 +725,9 @@ export default function Dashboard() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
               </svg>
             </div>
-            <h1 className="font-display text-2xl text-navy-deep mb-2">Scout Pro</h1>
+            <h1 className="font-display text-2xl text-navy-deep mb-2">Your trial has ended</h1>
             <p className="text-earth text-sm leading-relaxed mb-6">
-              Start your <strong>7-day free trial</strong> to access athlete profiles, power data, lab results, and messaging. Cancel any time.
+              Subscribe to Scout Pro to keep access to athlete profiles, power data, lab results, and messaging.
             </p>
             <div className="bg-cream-warm rounded-2xl p-4 mb-6 text-left space-y-2">
               {["Full access to all athlete profiles", "Power data & lab results", "Contact & message athletes", "Favourites & shortlists", "Palmarès & race history"].map((f) => (
@@ -735,9 +741,9 @@ export default function Dashboard() {
             </div>
             <button onClick={handleUpgrade} disabled={checkingOut}
               className="w-full bg-coral hover:bg-coral/90 text-white font-semibold py-3 rounded-full transition-colors disabled:opacity-50 text-sm">
-              {checkingOut ? "Loading…" : "Start 7-day free trial — €9.99/mo"}
+              {checkingOut ? "Loading…" : "Subscribe — €9.99/mo"}
             </button>
-            <p className="text-earth/40 text-xs mt-3">No charge until your trial ends · Cancel any time</p>
+            <p className="text-earth/40 text-xs mt-3">Cancel any time from your account</p>
             <button onClick={() => { logout(); router.push("/login"); }}
               className="mt-4 text-xs text-earth/40 hover:text-earth underline">
               Sign out
@@ -749,6 +755,16 @@ export default function Dashboard() {
 
     return (
       <>
+      {/* Trial countdown banner */}
+      {subStatus === "trialing" && !trialExpired && daysLeftInTrial <= 3 && (
+        <div className="fixed top-0 left-0 right-0 z-40 bg-coral text-white text-xs font-semibold text-center py-2 px-4">
+          {daysLeftInTrial === 1 ? "Last day of your free trial" : `${daysLeftInTrial} days left in your free trial`} ·{" "}
+          <button onClick={handleUpgrade} disabled={checkingOut} className="underline hover:no-underline disabled:opacity-70">
+            Subscribe now — €9.99/mo
+          </button>
+        </div>
+      )}
+
       {showDeleteConfirm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6">

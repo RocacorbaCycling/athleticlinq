@@ -33,7 +33,6 @@ export const handler: Handler = async (event) => {
     metadata: { userId, userType },
     subscription_data: {
       metadata: { userId, userType },
-      ...(userType === "scout" ? { trial_period_days: 7 } : {}),
     },
   });
 
