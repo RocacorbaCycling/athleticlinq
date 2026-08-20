@@ -358,28 +358,50 @@ export default function NotFound() {
                     <p className="text-[11px] text-[#FC4C02] mb-4">Anchored on Strava-verified power data</p>
                   )}
                   {!athlete.stravaPowerVerified && <div className="mb-4" />}
-                  <div className="bg-cream-warm rounded-xl p-4">
-                    <div className="flex items-end gap-1.5 h-40">
-                      {buildPowerCurve(
-                        (athlete.stravaBestMaxPower || athlete.maxPower) ?? 0,
-                        athlete.fiveMinPower ?? 0,
-                        athlete.twentyMinPower ?? 0,
-                        (athlete.stravaFTPEstimate || athlete.ftp) ?? 0,
-                      ).map((bar, i) => (
-                        <div key={i} className="flex-1 h-full flex items-end">
-                          <div
-                            className="w-full rounded-t bg-gradient-to-t from-navy to-coral transition-all hover:opacity-80 cursor-pointer"
-                            style={{ height: `${bar.pct}%` }}
-                            title={`${bar.dur}: ~${bar.watts}W`}
-                          />
+                  {(() => {
+                    const bars = buildPowerCurve(
+                      (athlete.stravaBestMaxPower || athlete.maxPower) ?? 0,
+                      athlete.fiveMinPower ?? 0,
+                      athlete.twentyMinPower ?? 0,
+                      (athlete.stravaFTPEstimate || athlete.ftp) ?? 0,
+                    );
+                    const maxW = bars[0]?.watts ?? 0;
+                    const yTicks = [maxW, Math.round(maxW * 0.75), Math.round(maxW * 0.5), Math.round(maxW * 0.25), 0];
+                    return (
+                      <div className="bg-cream-warm rounded-xl p-4">
+                        <div className="flex gap-2">
+                          {/* Y-axis labels */}
+                          <div className="flex flex-col justify-between h-40 shrink-0 text-right">
+                            {yTicks.map((w) => (
+                              <span key={w} className="text-[9px] text-earth/60 leading-none">{w > 0 ? `${w}W` : "0"}</span>
+                            ))}
+                          </div>
+                          {/* Chart area */}
+                          <div className="flex-1">
+                            <div className="relative flex items-end gap-1 h-40">
+                              {/* Grid lines at 25 / 50 / 75 % */}
+                              {[25, 50, 75].map((pct) => (
+                                <div key={pct} className="absolute left-0 right-0 border-t border-earth/15 pointer-events-none" style={{ bottom: `${pct}%` }} />
+                              ))}
+                              {bars.map((bar, i) => (
+                                <div key={i} className="flex-1 h-full flex items-end">
+                                  <div
+                                    className="w-full rounded-t bg-gradient-to-t from-navy to-coral hover:opacity-80 cursor-pointer transition-opacity"
+                                    style={{ height: `${bar.pct}%` }}
+                                    title={`${bar.dur}: ~${bar.watts}W`}
+                                  />
+                                </div>
+                              ))}
+                            </div>
+                            <div className="flex justify-between mt-2 text-[9px] text-earth">
+                              <span>5s</span><span>30s</span><span>2m</span>
+                              <span>10m</span><span>30m</span><span>120m</span>
+                            </div>
+                          </div>
                         </div>
-                      ))}
-                    </div>
-                    <div className="flex justify-between mt-2 text-[9px] text-earth px-1">
-                      <span>5s</span><span>30s</span><span>2m</span>
-                      <span>10m</span><span>30m</span><span>120m</span>
-                    </div>
-                  </div>
+                      </div>
+                    );
+                  })()}
                 </>
               </PowerGate>
             </div>
