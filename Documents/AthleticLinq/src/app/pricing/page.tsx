@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { useAuth, isAthlete } from "@/context/AuthContext";
 
 function CheckIcon({ className = "w-4 h-4" }: { className?: string }) {
   return (
@@ -55,25 +56,49 @@ const faqs = [
     a: "Scouts and teams derive direct commercial value from the platform — they find their next signing, reduce recruitment costs, and gain a global talent edge. Athletes gain opportunity. Charging athletes would reduce the talent pool, which makes the platform less valuable for scouts. Both sides win when athletes join for free.",
   },
   {
-    q: "When will paid plans launch?",
-    a: "We're in pre-launch and currently onboarding scouts for free during our beta period. Paid plans will launch alongside the full platform release. Scouts who join now will receive early-adopter pricing.",
-  },
-  {
     q: "What does 'Scout Pro' include exactly?",
     a: "Scout Pro gives you full access to every athlete's power data, W/kg figures, compound scores, profile videos, and Strava activity history. You can contact any athlete directly, build shortlists, and filter the entire database by discipline, age, region, weight, and performance metrics.",
+  },
+  {
+    q: "Is there a free trial for scouts?",
+    a: "Yes — every new scout account starts with a 7-day free trial, no credit card required. You get full access to all Scout Pro features from the moment you sign up.",
   },
   {
     q: "Can a national federation use AthleticLinq?",
     a: "Yes — the Agency & Federation tier is designed for governing bodies, multi-nation academies, and large management companies. This includes custom onboarding, data export, talent pipeline reporting, and optional white-labelling. Contact us to discuss.",
   },
   {
-    q: "Is there a free trial for scouts?",
-    a: "During our beta launch, all scouts have free access so we can grow the athlete database together. When paid plans launch, we'll offer a 14-day free trial on all scout tiers.",
+    q: "Can I cancel my subscription at any time?",
+    a: "Yes, you can cancel at any time from your dashboard — no minimum term, no cancellation fees. You'll retain access until the end of your current billing period.",
   },
 ];
 
 export default function PricingPage() {
   const [openFaq, setOpenFaq] = useState<number | null>(null);
+  const [checkingOut, setCheckingOut] = useState(false);
+  const { user } = useAuth();
+  const athleteLoggedIn = isAthlete(user);
+
+  async function handleAthleteUpgrade() {
+    if (!athleteLoggedIn || !user) {
+      window.location.href = "/signup/athlete";
+      return;
+    }
+    setCheckingOut(true);
+    try {
+      const res = await fetch("/.netlify/functions/create-checkout-session", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: user.id, userType: "athlete", email: user.email }),
+      });
+      const { url } = await res.json();
+      if (url) window.location.href = url;
+    } catch {
+      window.location.href = "/dashboard";
+    } finally {
+      setCheckingOut(false);
+    }
+  }
 
   return (
     <div className="min-h-screen bg-stone/10">
@@ -86,7 +111,7 @@ export default function PricingPage() {
         <div className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pt-10 pb-16 text-center">
           <div className="inline-flex items-center gap-2 bg-olive/15 border border-olive/30 rounded-full px-5 py-2 mb-6">
             <span className="w-2 h-2 rounded-full bg-olive animate-pulse shrink-0" />
-            <span className="text-olive text-xs font-semibold uppercase tracking-widest">Beta — currently free for scouts</span>
+            <span className="text-olive text-xs font-semibold uppercase tracking-widest">Live — scouts get 7 days free</span>
           </div>
           <h1 className="font-display text-5xl sm:text-6xl text-white mb-4">
             Simple, fair pricing
@@ -139,7 +164,7 @@ export default function PricingPage() {
                 <div className="mb-6">
                   <div className="text-xs uppercase tracking-widest text-white/70 font-semibold mb-2">Athlete Pro</div>
                   <div className="flex items-end gap-2 mb-1">
-                    <span className="font-display text-5xl text-white">£4</span>
+                    <span className="font-display text-5xl text-white">€3.99</span>
                     <span className="text-white/60 text-sm mb-2">/month</span>
                   </div>
                   <div className="text-white/60 text-sm">Optional — never required to be discovered</div>
@@ -155,10 +180,11 @@ export default function PricingPage() {
                   ))}
                 </ul>
                 <button
-                  className="block w-full text-center bg-white text-coral font-semibold py-3 rounded-full transition-colors text-sm hover:bg-white/90"
-                  onClick={() => alert("Athlete Pro launching at full release — join the waitlist on our homepage to be notified.")}
+                  className="block w-full text-center bg-white text-coral font-semibold py-3 rounded-full transition-colors text-sm hover:bg-white/90 disabled:opacity-60"
+                  onClick={handleAthleteUpgrade}
+                  disabled={checkingOut}
                 >
-                  Coming at Launch →
+                  {checkingOut ? "Loading…" : athleteLoggedIn ? "Upgrade to Pro" : "Get Athlete Pro →"}
                 </button>
               </div>
             </div>
@@ -187,12 +213,12 @@ export default function PricingPage() {
             <p className="text-earth text-base max-w-xl mx-auto leading-relaxed">
               Full access to the world&apos;s most data-rich cycling talent database. Filter by power, W/kg, discipline, region, and age — then contact athletes directly.
             </p>
-            <div className="inline-flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-full px-4 py-2 mt-4">
-              <svg className="w-3.5 h-3.5 text-amber-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            <div className="inline-flex items-center gap-2 bg-olive/10 border border-olive/25 rounded-full px-4 py-2 mt-4">
+              <svg className="w-3.5 h-3.5 text-olive shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
-              <span className="text-amber-800 text-xs font-medium">
-                All scout tiers are <strong>free during beta</strong> while we grow the athlete pool. Paid plans launch at full release.
+              <span className="text-earth text-xs font-medium">
+                New scouts get a <strong>7-day free trial</strong> — no credit card required.
               </span>
             </div>
           </div>
@@ -208,10 +234,10 @@ export default function PricingPage() {
               <div className="mb-6 pt-3">
                 <div className="text-xs uppercase tracking-widest text-earth/60 font-semibold mb-2">Scout Pro</div>
                 <div className="flex items-end gap-2 mb-1">
-                  <span className="font-display text-4xl text-navy-deep">£39</span>
+                  <span className="font-display text-4xl text-navy-deep">€9.99</span>
                   <span className="text-earth/60 text-sm mb-1">/month</span>
                 </div>
-                <div className="text-earth/50 text-xs">Individual scout or talent manager</div>
+                <div className="text-earth/50 text-xs">Individual scout or talent manager · 7-day free trial</div>
               </div>
               <ul className="space-y-2.5 mb-8 text-sm">
                 {scoutFeatures.map((f) => {
@@ -347,7 +373,7 @@ export default function PricingPage() {
         {/* ── Bottom CTA ── */}
         <section className="text-center pb-6">
           <h2 className="font-display text-2xl text-navy-deep mb-3">Ready to get started?</h2>
-          <p className="text-earth text-sm mb-6">Join the waitlist during our pre-launch period.</p>
+          <p className="text-earth text-sm mb-6">Athletes join free. Scouts get 7 days free, no card needed.</p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <Link href="/signup/athlete"
               className="bg-coral hover:bg-coral/90 text-white font-semibold px-8 py-3 rounded-full transition-colors text-sm">

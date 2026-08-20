@@ -421,8 +421,8 @@ export default function DiscoverPage() {
               className="px-3 py-2.5 rounded-xl bg-white border border-stone/40 text-sm text-warm-black focus:outline-none focus:ring-2 focus:ring-coral/30 ml-auto"
             >
               <option value="score">↕ Compound Score</option>
-              <option value="wpkg">↕ W/kg</option>
-              <option value="ftp">↕ FTP</option>
+              {hasFullAccess && <option value="wpkg">↕ W/kg</option>}
+              {hasFullAccess && <option value="ftp">↕ FTP</option>}
               <option value="age">↕ Youngest</option>
             </select>
 
