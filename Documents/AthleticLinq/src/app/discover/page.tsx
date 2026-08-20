@@ -14,6 +14,75 @@ type SortOption = "score" | "ftp" | "wpkg" | "age";
 const USERS_KEY = "athleticlinq_users";
 const PREVIEW_COUNT = 4; // guests see this many athletes before lock
 
+// ── Continent mapping ─────────────────────────────────────────────────────────
+const CONTINENT_MAP: Record<string, string> = {
+  // Africa
+  algerian: "Africa", angolan: "Africa", beninese: "Africa", botswanan: "Africa",
+  burkinabe: "Africa", burundian: "Africa", cameroonian: "Africa", "cape verdean": "Africa",
+  chadian: "Africa", comorian: "Africa", congolese: "Africa", djiboutian: "Africa",
+  egyptian: "Africa", "equatorial guinean": "Africa", eritrean: "Africa", ethiopian: "Africa",
+  gabonese: "Africa", gambian: "Africa", ghanaian: "Africa", guinean: "Africa",
+  ivorian: "Africa", kenyan: "Africa", lesothan: "Africa", liberian: "Africa",
+  libyan: "Africa", malagasy: "Africa", malawian: "Africa", malian: "Africa",
+  mauritanian: "Africa", mauritian: "Africa", moroccan: "Africa", mozambican: "Africa",
+  namibian: "Africa", nigerien: "Africa", nigerian: "Africa", rwandan: "Africa",
+  senegalese: "Africa", "sierra leonean": "Africa", somali: "Africa", "south african": "Africa",
+  "south sudanese": "Africa", sudanese: "Africa", swazi: "Africa", tanzanian: "Africa",
+  togolese: "Africa", tunisian: "Africa", ugandan: "Africa", zambian: "Africa",
+  zimbabwean: "Africa",
+  // South America
+  argentine: "South America", argentinian: "South America", bolivian: "South America",
+  brazilian: "South America", chilean: "South America", colombian: "South America",
+  ecuadorian: "South America", guyanese: "South America", paraguayan: "South America",
+  peruvian: "South America", surinamese: "South America", uruguayan: "South America",
+  venezuelan: "South America",
+  // North America / Central America / Caribbean
+  american: "North America", canadian: "North America", mexican: "North America",
+  guatemalan: "North America", belizean: "North America", honduran: "North America",
+  salvadoran: "North America", nicaraguan: "North America", "costa rican": "North America",
+  panamanian: "North America", cuban: "North America", dominican: "North America",
+  haitian: "North America", jamaican: "North America", "puerto rican": "North America",
+  "trinidad and tobago": "North America",
+  // Europe
+  albanian: "Europe", andorran: "Europe", armenian: "Europe", austrian: "Europe",
+  azerbaijani: "Europe", belarusian: "Europe", belgian: "Europe", "bosnian": "Europe",
+  bulgarian: "Europe", croatian: "Europe", cypriot: "Europe", czech: "Europe",
+  danish: "Europe", dutch: "Europe", estonian: "Europe", finnish: "Europe",
+  french: "Europe", georgian: "Europe", german: "Europe", greek: "Europe",
+  hungarian: "Europe", icelandic: "Europe", irish: "Europe", italian: "Europe",
+  kazakh: "Europe", kosovar: "Europe", latvian: "Europe", liechtenstein: "Europe",
+  lithuanian: "Europe", luxembourgish: "Europe", macedonian: "Europe", maltese: "Europe",
+  moldovan: "Europe", monacan: "Europe", montenegrin: "Europe", norwegian: "Europe",
+  polish: "Europe", portuguese: "Europe", romanian: "Europe", russian: "Europe",
+  "san marinese": "Europe", serbian: "Europe", slovak: "Europe", slovenian: "Europe",
+  spanish: "Europe", swedish: "Europe", swiss: "Europe", turkish: "Europe",
+  ukrainian: "Europe", british: "Europe", english: "Europe", scottish: "Europe",
+  welsh: "Europe", "northern irish": "Europe",
+  // Asia
+  afghan: "Asia", bahraini: "Asia", bangladeshi: "Asia", bhutanese: "Asia",
+  bruneian: "Asia", burmese: "Asia", cambodian: "Asia", chinese: "Asia",
+  emirati: "Asia", filipino: "Asia", indian: "Asia", indonesian: "Asia",
+  iranian: "Asia", iraqi: "Asia", israeli: "Asia", japanese: "Asia",
+  jordanian: "Asia", kuwaiti: "Asia", kyrgyz: "Asia", laotian: "Asia",
+  lebanese: "Asia", malaysian: "Asia", maldivian: "Asia", mongolian: "Asia",
+  nepalese: "Asia", "north korean": "Asia", omani: "Asia", pakistani: "Asia",
+  palestinian: "Asia", qatari: "Asia", saudi: "Asia", singaporean: "Asia",
+  "south korean": "Asia", "sri lankan": "Asia", syrian: "Asia", taiwanese: "Asia",
+  tajik: "Asia", thai: "Asia", timorese: "Asia", turkmen: "Asia",
+  uzbek: "Asia", vietnamese: "Asia", yemeni: "Asia",
+  // Oceania
+  australian: "Oceania", "new zealander": "Oceania", fijian: "Oceania",
+  "papua new guinean": "Oceania", samoan: "Oceania", tongan: "Oceania",
+};
+
+const CONTINENTS = ["all", "Africa", "Asia", "Europe", "North America", "South America", "Oceania"] as const;
+type Continent = typeof CONTINENTS[number];
+
+function getContinent(nationality: string): string {
+  const key = nationality.trim().toLowerCase();
+  return CONTINENT_MAP[key] ?? "Other";
+}
+
 /** Map a registered AthleteProfile (strings) to the Athlete shape (numbers) */
 function profileToAthlete(p: AthleteProfile): Athlete {
   const ftp = parseFloat(p.ftp) || 0;
@@ -115,6 +184,7 @@ export default function DiscoverPage() {
   const [filterCategory, setFilterCategory]   = useState("all");
   const [filterMinWpkg, setFilterMinWpkg]     = useState(0);
   const [filterSex, setFilterSex]             = useState<"all" | "male" | "female">("all");
+  const [filterContinent, setFilterContinent] = useState<Continent>("all");
 
   // ── Applied filter state (what drives results — set by Search button) ─────
   const [applied, setApplied] = useState({
@@ -123,6 +193,7 @@ export default function DiscoverPage() {
     category:   "all",
     minWpkg:    0,
     sex:        "all" as "all" | "male" | "female",
+    continent:  "all" as Continent,
   });
 
   // ── Sort is live (presentation only — no button needed) ───────────────────
@@ -136,12 +207,14 @@ export default function DiscoverPage() {
     filterDiscipline     !== applied.discipline ||
     filterCategory       !== applied.category   ||
     filterMinWpkg        !== applied.minWpkg    ||
-    filterSex            !== applied.sex;
+    filterSex            !== applied.sex        ||
+    filterContinent      !== applied.continent;
 
   // Derived: are any filters currently active?
   const hasActiveFilters =
     applied.search !== "" || applied.discipline !== "all" ||
-    applied.category !== "all" || applied.minWpkg > 0 || applied.sex !== "all";
+    applied.category !== "all" || applied.minWpkg > 0 ||
+    applied.sex !== "all" || applied.continent !== "all";
 
   function handleSearch() {
     setApplied({
@@ -150,13 +223,14 @@ export default function DiscoverPage() {
       category:   filterCategory,
       minWpkg:    filterMinWpkg,
       sex:        filterSex,
+      continent:  filterContinent,
     });
   }
 
   function handleReset() {
     setSearchQuery(""); setFilterDiscipline("all"); setFilterCategory("all");
-    setFilterMinWpkg(0); setFilterSex("all");
-    setApplied({ search: "", discipline: "all", category: "all", minWpkg: 0, sex: "all" });
+    setFilterMinWpkg(0); setFilterSex("all"); setFilterContinent("all");
+    setApplied({ search: "", discipline: "all", category: "all", minWpkg: 0, sex: "all", continent: "all" });
   }
 
   // Access levels
@@ -220,7 +294,8 @@ export default function DiscoverPage() {
       const matchesCategory   = applied.category   === "all" || a.category   === applied.category;
       const matchesWpkg       = a.ftpPerKg >= applied.minWpkg;
       const matchesSex        = applied.sex === "all" || !a.sex || a.sex === applied.sex;
-      return matchesSearch && matchesDiscipline && matchesCategory && matchesWpkg && matchesSex;
+      const matchesContinent  = applied.continent === "all" || getContinent(a.nationality) === applied.continent;
+      return matchesSearch && matchesDiscipline && matchesCategory && matchesWpkg && matchesSex && matchesContinent;
     });
 
     result.sort((a, b) => {
@@ -349,6 +424,17 @@ export default function DiscoverPage() {
             >
               {categories.map((c) => (
                 <option key={c} value={c}>{c === "all" ? "All Categories" : c}</option>
+              ))}
+            </select>
+
+            {/* Continent */}
+            <select
+              value={filterContinent}
+              onChange={(e) => setFilterContinent(e.target.value as Continent)}
+              className="px-3 py-2.5 rounded-xl bg-white border border-stone/40 text-sm text-warm-black focus:outline-none focus:ring-2 focus:ring-coral/30"
+            >
+              {CONTINENTS.map((c) => (
+                <option key={c} value={c}>{c === "all" ? "All Continents" : c}</option>
               ))}
             </select>
 
@@ -483,6 +569,12 @@ export default function DiscoverPage() {
                 <span className="inline-flex items-center gap-1 text-xs bg-navy-deep/10 text-navy-deep px-2.5 py-1 rounded-full font-medium">
                   ≥ {applied.minWpkg} W/kg
                   <button onClick={() => { setFilterMinWpkg(0); setApplied(p => ({ ...p, minWpkg: 0 })); }} className="hover:opacity-60">×</button>
+                </span>
+              )}
+              {applied.continent !== "all" && (
+                <span className="inline-flex items-center gap-1 text-xs bg-navy-deep/10 text-navy-deep px-2.5 py-1 rounded-full font-medium">
+                  {applied.continent}
+                  <button onClick={() => { setFilterContinent("all"); setApplied(p => ({ ...p, continent: "all" })); }} className="hover:opacity-60">×</button>
                 </span>
               )}
             </div>
