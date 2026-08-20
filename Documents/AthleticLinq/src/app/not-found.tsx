@@ -349,35 +349,39 @@ export default function NotFound() {
               </PowerGate>
             </div>
 
-            {/* Power Duration Curve */}
+            {/* Power Duration Curve — scouts only */}
             <div className="bg-white rounded-2xl shadow-sm border border-stone/30 p-6">
               <h2 className="font-display text-xl text-navy mb-1">Power Duration Curve</h2>
-              {athlete.stravaPowerVerified && (
-                <p className="text-[11px] text-[#FC4C02] mb-4">Anchored on Strava-verified power data</p>
-              )}
-              {!athlete.stravaPowerVerified && <div className="mb-4" />}
-              <div className="bg-cream-warm rounded-xl p-4">
-                <div className="flex items-end gap-1.5 h-40">
-                  {buildPowerCurve(
-                    (athlete.stravaBestMaxPower || athlete.maxPower) ?? 0,
-                    athlete.fiveMinPower ?? 0,
-                    athlete.twentyMinPower ?? 0,
-                    (athlete.stravaFTPEstimate || athlete.ftp) ?? 0,
-                  ).map((bar, i) => (
-                    <div key={i} className="flex-1 flex flex-col items-center gap-1">
-                      <div
-                        className="w-full rounded-t bg-gradient-to-t from-navy to-coral transition-all hover:from-coral hover:to-coral-light cursor-pointer"
-                        style={{ height: `${bar.pct}%` }}
-                        title={`${bar.dur}: ~${bar.watts}W`}
-                      />
+              <PowerGate>
+                <>
+                  {athlete.stravaPowerVerified && (
+                    <p className="text-[11px] text-[#FC4C02] mb-4">Anchored on Strava-verified power data</p>
+                  )}
+                  {!athlete.stravaPowerVerified && <div className="mb-4" />}
+                  <div className="bg-cream-warm rounded-xl p-4">
+                    <div className="flex items-end gap-1.5 h-40">
+                      {buildPowerCurve(
+                        (athlete.stravaBestMaxPower || athlete.maxPower) ?? 0,
+                        athlete.fiveMinPower ?? 0,
+                        athlete.twentyMinPower ?? 0,
+                        (athlete.stravaFTPEstimate || athlete.ftp) ?? 0,
+                      ).map((bar, i) => (
+                        <div key={i} className="flex-1 flex flex-col items-center gap-1">
+                          <div
+                            className="w-full rounded-t bg-gradient-to-t from-navy to-coral transition-all hover:from-coral hover:to-coral-light cursor-pointer"
+                            style={{ height: `${bar.pct}%` }}
+                            title={`${bar.dur}: ~${bar.watts}W`}
+                          />
+                        </div>
+                      ))}
                     </div>
-                  ))}
-                </div>
-                <div className="flex justify-between mt-2 text-[9px] text-earth px-1">
-                  <span>5s</span><span>30s</span><span>2m</span>
-                  <span>10m</span><span>30m</span><span>120m</span>
-                </div>
-              </div>
+                    <div className="flex justify-between mt-2 text-[9px] text-earth px-1">
+                      <span>5s</span><span>30s</span><span>2m</span>
+                      <span>10m</span><span>30m</span><span>120m</span>
+                    </div>
+                  </div>
+                </>
+              </PowerGate>
             </div>
 
             {/* Strava Training Data — scouts only */}
