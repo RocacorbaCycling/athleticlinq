@@ -366,9 +366,9 @@ export default function NotFound() {
                         athlete.twentyMinPower ?? 0,
                         (athlete.stravaFTPEstimate || athlete.ftp) ?? 0,
                       ).map((bar, i) => (
-                        <div key={i} className="flex-1 flex flex-col items-center gap-1">
+                        <div key={i} className="flex-1 h-full flex items-end">
                           <div
-                            className="w-full rounded-t bg-gradient-to-t from-navy to-coral transition-all hover:from-coral hover:to-coral-light cursor-pointer"
+                            className="w-full rounded-t bg-gradient-to-t from-navy to-coral transition-all hover:opacity-80 cursor-pointer"
                             style={{ height: `${bar.pct}%` }}
                             title={`${bar.dur}: ~${bar.watts}W`}
                           />
