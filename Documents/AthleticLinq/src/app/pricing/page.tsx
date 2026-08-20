@@ -12,6 +12,13 @@ function CheckIcon({ className = "w-4 h-4" }: { className?: string }) {
   );
 }
 
+function CrossIcon() {
+  return (
+    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+    </svg>
+  );
+}
 
 const athleteFeatures = [
   { text: "Full performance profile (FTP, W/kg, compound score)", free: true, pro: true },
