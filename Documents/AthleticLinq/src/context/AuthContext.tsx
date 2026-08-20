@@ -287,7 +287,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       type: "athlete",
       id: `user_${Date.now()}`,
       createdAt: new Date().toISOString(),
-      verified: false,
+      verified: true,
     };
 
     if (supabase) {
@@ -295,7 +295,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         id: newUser.id,
         email: newUser.email.toLowerCase(),
         profile: newUser,
-        verified: false,
+        verified: true,
       });
     }
 
