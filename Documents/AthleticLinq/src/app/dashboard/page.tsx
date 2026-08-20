@@ -375,6 +375,11 @@ export default function Dashboard() {
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
+  const [checkingOut, setCheckingOut] = useState(false);
+  const [paymentSuccess] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return new URLSearchParams(window.location.search).get("payment") === "success";
+  });
   const [uploadingVideo, setUploadingVideo] = useState(false);
   const [videoUploadError, setVideoUploadError] = useState<string | null>(null);
   const [videoUrlInput, setVideoUrlInput] = useState("");
@@ -677,12 +682,6 @@ export default function Dashboard() {
   const isPro = !!(user as AthleteProfile | ScoutProfile | ParentProfile).pro;
   const subStatus = (user as AthleteProfile | ScoutProfile | ParentProfile).subscriptionStatus ?? "free";
   const stripeCustomerId = (user as AthleteProfile | ScoutProfile | ParentProfile).stripeCustomerId;
-
-  const [checkingOut, setCheckingOut] = useState(false);
-  const [paymentSuccess] = useState(() => {
-    if (typeof window === "undefined") return false;
-    return new URLSearchParams(window.location.search).get("payment") === "success";
-  });
 
   async function handleUpgrade() {
     if (!user) return;
